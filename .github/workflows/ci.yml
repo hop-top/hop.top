@@ -1,19 +1,17 @@
-name: CI (TypeScript)
+name: CI
 
 on:
   push:
     branches: [main]
-    paths: ["**.ts", "package.json", "package-lock.json"]
   pull_request:
     branches: [main]
-    paths: ["**.ts", "package.json", "package-lock.json"]
 
 permissions:
   contents: read
 
 jobs:
-  lint:
-    name: Lint
+  ci:
+    name: Lint, Test, Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,40 +21,32 @@ jobs:
           node-version: "22"
 
       - name: Install dependencies
-        run: npm install
+        run: |
+          npm install
+          cd worker && npm install && cd ..
+          cd docs-worker && npm install && cd ..
+          cd site && npm install && cd ..
 
       - name: Lint
         run: npm run lint
 
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Test
+      - name: Test (root)
         run: npm test
 
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    needs: [lint, test]
-    steps:
-      - uses: actions/checkout@v4
+      - name: Test (worker)
+        run: cd worker && npx vitest run
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
+      - name: Test (docs-worker)
+        run: cd docs-worker && npx vitest run
 
-      - name: Install dependencies
-        run: npm install
+      - name: Test (site)
+        run: cd site && npx vitest run
+
+      - name: Test (E2E)
+        run: npm run test:e2e
 
       - name: Build
         run: npm run build
+
+      - name: Build (site)
+        run: cd site && npx astro build
