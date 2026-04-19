@@ -1,0 +1,98 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = 'One import path. Many tools.' } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <nav class="nav">
+      <a href="/" class="nav-brand">
+        <span class="nav-logo">hop</span><span class="nav-dot">.</span
+        ><span class="nav-tld">top</span>
+      </a>
+      <div class="nav-links">
+        <a href="https://github.com/hop-top" class="nav-link">GitHub</a>
+      </div>
+    </nav>
+    <slot />
+    <footer class="footer">
+      <p class="footer-text">
+        hop.top &mdash; developer tools that compound.
+      </p>
+    </footer>
+  </body>
+</html>
+
+<style>
+  .nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .nav-brand {
+    font-family: var(--font-mono);
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .nav-logo {
+    color: var(--text-primary);
+  }
+
+  .nav-dot {
+    color: var(--accent-amber);
+  }
+
+  .nav-tld {
+    color: var(--text-secondary);
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 1.5rem;
+  }
+
+  .nav-link {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: color 0.15s;
+  }
+
+  .nav-link:hover {
+    color: var(--text-primary);
+  }
+
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 2rem;
+    text-align: center;
+    margin-top: 6rem;
+  }
+
+  .footer-text {
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+  }
+</style>
+
+<style is:global>
+  @import '../styles/global.css';
+</style>
