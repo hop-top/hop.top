@@ -1,0 +1,128 @@
+---
+import { projects } from '../data/projects';
+const count = projects.length;
+---
+
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-content">
+    <h1 class="hero-title">
+      <span class="hero-mono">hop.top/</span><span class="hero-pkg"
+        >&lt;pkg&gt;</span
+      >
+    </h1>
+    <p class="hero-sub">
+      One import path. {count} packages. Go vanity imports,
+      docs, and landing pages &mdash; all under one roof.
+    </p>
+    <div class="hero-actions">
+      <a href="#projects" class="btn btn-primary">Browse packages</a>
+      <a href="https://github.com/hop-top" class="btn btn-ghost">
+        View on GitHub
+      </a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    padding: 6rem 2rem 4rem;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  .hero-glow {
+    position: absolute;
+    top: -40%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--accent-amber) 15%, transparent) 0%,
+      color-mix(in srgb, var(--accent-cyan) 8%, transparent) 40%,
+      transparent 70%
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  .hero-title {
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 1.25rem;
+  }
+
+  .hero-mono {
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+  }
+
+  .hero-pkg {
+    font-family: var(--font-mono);
+    color: var(--accent-amber);
+  }
+
+  .hero-sub {
+    font-size: 1.125rem;
+    color: var(--text-secondary);
+    max-width: 520px;
+    margin: 0 auto 2rem;
+    line-height: 1.6;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.625rem 1.5rem;
+    border-radius: var(--radius);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    transition:
+      background 0.15s,
+      color 0.15s,
+      transform 0.15s;
+  }
+
+  .btn:hover {
+    transform: translateY(-1px);
+  }
+
+  .btn-primary {
+    background: var(--accent-amber);
+    color: var(--bg-deep);
+  }
+
+  .btn-primary:hover {
+    background: color-mix(in srgb, var(--accent-amber) 85%, white);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+  }
+
+  .btn-ghost:hover {
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+  }
+</style>
