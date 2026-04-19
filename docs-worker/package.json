@@ -1,0 +1,20 @@
+{
+  "name": "hop-top-docs-worker",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "hono": "^4.7.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250410.0",
+    "typescript": "^5.6.0",
+    "vitest": "^3.1.0",
+    "wrangler": "^4.14.0"
+  }
+}
