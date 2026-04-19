@@ -8,4 +8,4 @@ routes = [
 
 [vars]
 # The target Pages site
-SITE_URL = "https://hop-top.pages.dev"
+SITE_URL = "https://hop-top-site.pages.dev"
