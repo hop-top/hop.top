@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run"
   },
   "author": "Jad Bitar <jadb@users.noreply.github.com>",
   "license": "Apache-2.0",
@@ -16,8 +16,10 @@
     "hono": "^4.12.5"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.8.0",
     "@cloudflare/workers-types": "^4.20260307.1",
     "typescript": "^5.9.3",
+    "vitest": "~3.0.0",
     "wrangler": "^4.0.0"
   }
 }
