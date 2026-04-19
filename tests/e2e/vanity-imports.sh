@@ -18,8 +18,8 @@ declare -A SUBMODULES=(
   ["xrr-poly/go"]="https://github.com/hop-top/xrr-poly"
 )
 
-pass() { ((PASS++)); echo "  PASS: $1"; }
-fail() { ((FAIL++)); ERRORS+=("$1"); echo "  FAIL: $1"; }
+pass() { PASS=$((PASS + 1)); echo "  PASS: $1"; }
+fail() { FAIL=$((FAIL + 1)); ERRORS+=("$1"); echo "  FAIL: $1"; }
 
 check_vanity() {
   local pkg="$1"
@@ -34,7 +34,7 @@ check_vanity() {
   echo "Testing ${import_path}..."
 
   local response
-  response=$(curl -sS -w "\n%{http_code}" "${BASE_URL}/${pkg}?go-get=1" 2>&1) || {
+  response=$(curl -sS --connect-timeout 10 --max-time 30 -w "\n%{http_code}" "${BASE_URL}/${pkg}?go-get=1" 2>&1) || {
     fail "${pkg}: curl failed"
     return
   }
@@ -71,7 +71,7 @@ check_negative() {
   echo "Testing negative: ${pkg}..."
 
   local http_code
-  http_code=$(curl -sS -o /dev/null -w "%{http_code}" \
+  http_code=$(curl -sS --connect-timeout 10 --max-time 30 -o /dev/null -w "%{http_code}" \
     "${BASE_URL}/${pkg}?go-get=1" 2>&1) || {
     fail "negative ${pkg}: curl failed"
     return
