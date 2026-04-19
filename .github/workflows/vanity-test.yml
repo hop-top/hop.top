@@ -1,0 +1,27 @@
+name: Vanity Import Tests
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 9 * * 1" # weekly Monday 9am UTC
+  workflow_run:
+    workflows: ["Deploy"]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: E2E Vanity Imports
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run vanity import tests
+        run: ./tests/e2e/vanity-imports.sh
+        env:
+          HOP_TOP_URL: https://hop.top
