@@ -14,7 +14,7 @@ const app = new Hono<{ Bindings: Bindings }>()
 const PROXIED_SUBDOMAINS = Object.keys(REPOS).filter(name => name !== 'hop')
 
 // Helper for Go vanity response
-const goVanity = (importPath: string, repoUrl: string) => {
+export const goVanity = (importPath: string, repoUrl: string) => {
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -65,7 +65,11 @@ async function proxyToSubdomain(c: any, subdomain: string) {
         .on('link', {
           element(el) {
             const href = el.getAttribute('href')
-            if (href?.startsWith('/') && !href.startsWith(`/${subdomain}`)) {
+            if (
+              href?.startsWith('/') &&
+              !href.startsWith(`/${subdomain}`) &&
+              !PROXIED_SUBDOMAINS.some(s => href.startsWith(`/${s}/`))
+            ) {
               el.setAttribute('href', `/${subdomain}${href}`)
             }
           }
@@ -73,7 +77,11 @@ async function proxyToSubdomain(c: any, subdomain: string) {
         .on('script', {
           element(el) {
             const src = el.getAttribute('src')
-            if (src?.startsWith('/') && !src.startsWith(`/${subdomain}`)) {
+            if (
+              src?.startsWith('/') &&
+              !src.startsWith(`/${subdomain}`) &&
+              !PROXIED_SUBDOMAINS.some(s => src.startsWith(`/${s}/`))
+            ) {
               el.setAttribute('src', `/${subdomain}${src}`)
             }
           }
@@ -81,7 +89,11 @@ async function proxyToSubdomain(c: any, subdomain: string) {
         .on('img', {
           element(el) {
             const src = el.getAttribute('src')
-            if (src?.startsWith('/') && !src.startsWith(`/${subdomain}`)) {
+            if (
+              src?.startsWith('/') &&
+              !src.startsWith(`/${subdomain}`) &&
+              !PROXIED_SUBDOMAINS.some(s => src.startsWith(`/${s}/`))
+            ) {
               el.setAttribute('src', `/${subdomain}${src}`)
             }
           }
@@ -109,10 +121,18 @@ async function proxyToSubdomain(c: any, subdomain: string) {
 
 // Proxy static assets that might be requested without the subdomain prefix
 app.all(
-  '/:path{( _astro|favicon\\.svg|houston\\.webp|starlight|pagefind|fonts|images)/.*}?',
+  '/:path{(_astro|favicon\\.svg|houston\\.webp|starlight|pagefind|fonts|images)/.*}?',
   async (c) => {
     const referer = c.req.header('referer') || ''
-    const subdomain = PROXIED_SUBDOMAINS.find(s => referer.includes(`/${s}`))
+    // Sort by length descending to avoid prefix collisions (e.g. xrr vs xrr-rs)
+    const sorted = [...PROXIED_SUBDOMAINS].sort((a, b) => b.length - a.length)
+    const subdomain = sorted.find(s => {
+      try {
+        const refUrl = new URL(referer)
+        const firstSeg = refUrl.pathname.split('/')[1]
+        return firstSeg === s
+      } catch { return false }
+    })
 
     if (subdomain) {
       const url = new URL(c.req.url)

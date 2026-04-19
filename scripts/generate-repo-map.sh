@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 # Fetch repo names from hop-top org
 REPOS=$(gh repo list hop-top --limit 100 --json name --jq '.[].name' | grep -v '^\.')
@@ -13,7 +13,8 @@ for repo in $REPOS; do
   echo "  \"$repo\": \"https://github.com/hop-top/$repo\"," >> "$FILE"
 
   # Detect Go submodules (dirs with go.mod at depth 1)
-  submods=$(gh api "repos/hop-top/$repo/git/trees/HEAD?recursive=1" \
+  default_branch=$(gh api "repos/hop-top/$repo" --jq '.default_branch' 2>/dev/null || echo "main")
+  submods=$(gh api "repos/hop-top/$repo/git/trees/$default_branch?recursive=1" \
     --jq '[.tree[] | select(.path | test("^[^/]+/go\\.mod$"))] | .[].path | gsub("/go\\.mod$"; "")' 2>/dev/null || true)
   for subdir in $submods; do
     echo "  \"$repo/$subdir\": \"https://github.com/hop-top/$repo\"," >> "$FILE"
