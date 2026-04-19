@@ -1,0 +1,25 @@
+{
+  "name": "@hop-top/worker",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker for hop.top edge routing, Go vanity imports, and subdomain proxying",
+  "private": true,
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "vitest run"
+  },
+  "author": "Jad Bitar <jadb@users.noreply.github.com>",
+  "license": "Apache-2.0",
+  "type": "module",
+  "dependencies": {
+    "hono": "^4.12.5"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.8.0",
+    "@cloudflare/workers-types": "^4.20260307.1",
+    "typescript": "^5.9.3",
+    "vitest": "~3.0.0",
+    "wrangler": "^4.0.0"
+  }
+}
