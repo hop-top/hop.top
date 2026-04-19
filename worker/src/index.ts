@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import type { Context } from 'hono'
 import { REPOS } from './repos'
 
 type Bindings = {
@@ -9,9 +10,33 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>()
 
+const SAFE_HEADERS = new Set([
+  'accept',
+  'accept-language',
+  'accept-encoding',
+  'user-agent',
+  'cache-control',
+  'if-none-match',
+  'if-modified-since',
+])
+
+const BODY_METHODS = new Set(['POST', 'PUT', 'PATCH'])
+
+function safeHeaders(raw: Headers): Headers {
+  const out = new Headers()
+  for (const [k, v] of raw.entries()) {
+    if (SAFE_HEADERS.has(k.toLowerCase())) {
+      out.set(k, v)
+    }
+  }
+  return out
+}
+
 // Subdomains that should be proxied with Access headers and HTML rewriting
 // We include all repo names except the main 'hop' toolkit repo
-const PROXIED_SUBDOMAINS = Object.keys(REPOS).filter(name => name !== 'hop')
+const PROXIED_SUBDOMAINS = Object.keys(REPOS).filter(
+  name => name !== 'hop' && !name.includes('/')
+)
 
 // Helper for Go vanity response
 export const goVanity = (importPath: string, repoUrl: string) => {
@@ -29,27 +54,24 @@ Redirecting to <a href="${repoUrl}">${repoUrl}</a>...
 }
 
 // Helper to proxy to a subdomain with headers and rewriting
-async function proxyToSubdomain(c: any, subdomain: string) {
+async function proxyToSubdomain(
+  c: Context<{ Bindings: Bindings }>,
+  subdomain: string,
+) {
   const url = new URL(c.req.url)
   const targetHost = `${subdomain}.hop.top`
   url.hostname = targetHost
   url.pathname = url.pathname.replace(new RegExp(`^\\/${subdomain}`), '') || '/'
 
-  const headers = new Headers(c.req.raw.headers)
-  headers.set('host', targetHost)
-  headers.delete('cf-ray')
-  headers.delete('cf-connecting-ip')
-  headers.delete('cf-visitor')
-  headers.delete('cf-ipcountry')
-
+  const headers = safeHeaders(c.req.raw.headers)
   headers.set('CF-Access-Client-Id', c.env.X402_CLIENT_ID || '')
   headers.set('CF-Access-Client-Secret', c.env.X402_CLIENT_SECRET || '')
 
   try {
     const response = await fetch(url.toString(), {
       method: c.req.method,
-      headers: headers,
-      body: c.req.raw.body,
+      headers,
+      body: BODY_METHODS.has(c.req.method) ? c.req.raw.body : undefined,
       redirect: 'manual'
     })
 
@@ -121,7 +143,7 @@ async function proxyToSubdomain(c: any, subdomain: string) {
 
 // Proxy static assets that might be requested without the subdomain prefix
 app.all(
-  '/:path{(_astro|favicon\\.svg|houston\\.webp|starlight|pagefind|fonts|images)/.*}?',
+  '/:path{((_astro|houston\\.webp|starlight|pagefind|fonts|images)/.*|favicon\\.svg)}',
   async (c) => {
     const referer = c.req.header('referer') || ''
     // Sort by length descending to avoid prefix collisions (e.g. xrr vs xrr-rs)
@@ -139,16 +161,15 @@ app.all(
       const targetHost = `${subdomain}.hop.top`
       url.hostname = targetHost
 
-      const headers = new Headers(c.req.raw.headers)
-      headers.set('host', targetHost)
+      const headers = safeHeaders(c.req.raw.headers)
       headers.set('CF-Access-Client-Id', c.env.X402_CLIENT_ID || '')
       headers.set('CF-Access-Client-Secret', c.env.X402_CLIENT_SECRET || '')
 
       try {
         return await fetch(url.toString(), {
           method: c.req.method,
-          headers: headers,
-          body: c.req.raw.body
+          headers,
+          body: BODY_METHODS.has(c.req.method) ? c.req.raw.body : undefined,
         })
       } catch (e) {
         // Asset failed to proxy, continue to main site fallback

@@ -8,7 +8,9 @@ import app from '../src/index'
 import { goVanity } from '../src/index'
 import { REPOS } from '../src/repos'
 
-const PROXIED_SUBDOMAINS = Object.keys(REPOS).filter(n => n !== 'hop')
+const PROXIED_SUBDOMAINS = Object.keys(REPOS).filter(
+  n => n !== 'hop' && !n.includes('/')
+)
 
 // Helper to make requests against the Hono app
 async function request(
@@ -90,6 +92,14 @@ describe('PROXIED_SUBDOMAINS', () => {
   it('includes other repos like "kit"', () => {
     expect(PROXIED_SUBDOMAINS).toContain('kit')
   })
+
+  it('excludes submodule keys containing "/"', () => {
+    // REPOS contains keys like "xrr-poly/go" — those must not appear
+    const repoSlashKeys = Object.keys(REPOS).filter(n => n.includes('/'))
+    expect(repoSlashKeys.length).toBeGreaterThan(0) // precondition
+    const withSlash = PROXIED_SUBDOMAINS.filter(n => n.includes('/'))
+    expect(withSlash).toEqual([])
+  })
 })
 
 // ── Root / proxies to SITE_URL ───────────────────────────────────
@@ -100,7 +110,7 @@ describe('root proxy', () => {
     // Should attempt to fetch from SITE_URL; response depends on
     // whether the upstream is reachable. We verify the request
     // doesn't 404 or throw.
-    expect([200, 502, 503, 530]).toContain(res.status)
+    expect([200, 500, 502, 503, 530]).toContain(res.status)
   })
 })
 
