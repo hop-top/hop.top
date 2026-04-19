@@ -203,6 +203,36 @@ describe('Bug 4: redirect Location headers', () => {
   })
 })
 
+describe('Bug 4b: relative Location headers', () => {
+  it('rewrites relative Location like /guides/intro/', async () => {
+    globalThis.fetch = vi.fn(async () => {
+      return new Response(null, {
+        status: 301,
+        headers: { Location: '/guides/intro/' },
+      })
+    }) as any
+
+    const res = await app.request('/kit/guides/intro')
+
+    expect(res.status).toBe(301)
+    expect(res.headers.get('location')).toBe('/kit/guides/intro/')
+  })
+
+  it('rewrites relative Location with query string', async () => {
+    globalThis.fetch = vi.fn(async () => {
+      return new Response(null, {
+        status: 302,
+        headers: { Location: '/api/?version=2' },
+      })
+    }) as any
+
+    const res = await app.request('/kit/api')
+
+    expect(res.status).toBe(302)
+    expect(res.headers.get('location')).toBe('/kit/api/?version=2')
+  })
+})
+
 describe('Bug 5: slug prefix collision', () => {
   it('does not match xrr when referer contains /xrr-ts/', async () => {
     let capturedUrl: string | undefined

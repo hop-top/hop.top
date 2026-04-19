@@ -163,12 +163,12 @@ function rewriteLocation(
   pkg: string,
 ): string {
   try {
-    const loc = new URL(location)
+    const loc = new URL(location, `https://${upstreamHost}`)
     if (loc.hostname === upstreamHost) {
       return `/${pkg}${loc.pathname}${loc.search}${loc.hash}`
     }
   } catch {
-    // relative URL or unparseable — leave as-is
+    // unparseable — leave as-is
   }
   return location
 }
