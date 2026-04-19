@@ -1,0 +1,93 @@
+---
+import type { Project } from '../data/projects';
+import { categories } from '../data/projects';
+
+interface Props {
+  project: Project;
+}
+
+const { project } = Astro.props;
+const cat = categories[project.category];
+---
+
+<a href={`/${project.name}`} class="card">
+  <div class="card-header">
+    <span class="card-name">{project.name}</span>
+    <span class="card-badge" style={`--badge-color: ${cat.color}`}>
+      {cat.label}
+    </span>
+  </div>
+  <p class="card-desc">{project.description}</p>
+  {
+    project.install && (
+      <code class="card-install">{project.install}</code>
+    )
+  }
+</a>
+
+<style>
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    padding: 1.25rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    transition:
+      border-color 0.2s,
+      transform 0.2s,
+      box-shadow 0.2s;
+    cursor: pointer;
+  }
+
+  .card:hover {
+    border-color: var(--border-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .card-name {
+    font-family: var(--font-mono);
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .card-badge {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--badge-color);
+    background: color-mix(in srgb, var(--badge-color) 12%, transparent);
+    padding: 0.2em 0.5em;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  .card-desc {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  .card-install {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    background: var(--bg-deep);
+    padding: 0.35em 0.6em;
+    border-radius: 4px;
+    margin-top: auto;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+</style>

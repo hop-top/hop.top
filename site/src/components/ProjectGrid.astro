@@ -1,0 +1,67 @@
+---
+import { projects, categories, type Category } from '../data/projects';
+import ProjectCard from './ProjectCard.astro';
+
+const grouped = Object.entries(categories).map(([key, meta]) => ({
+  key: key as Category,
+  ...meta,
+  items: projects.filter((p) => p.category === key),
+})).filter((g) => g.items.length > 0);
+---
+
+<section id="projects" class="grid-section">
+  <h2 class="grid-heading">Packages</h2>
+  {
+    grouped.map((group) => (
+      <div class="category-group">
+        <h3
+          class="category-label"
+          style={`--cat-color: ${group.color}`}
+        >
+          {group.label}
+        </h3>
+        <div class="grid">
+          {group.items.map((p) => (
+            <ProjectCard project={p} />
+          ))}
+        </div>
+      </div>
+    ))
+  }
+</section>
+
+<style>
+  .grid-section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 2rem 4rem;
+  }
+
+  .grid-heading {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 2.5rem;
+    color: var(--text-primary);
+  }
+
+  .category-group {
+    margin-bottom: 2.5rem;
+  }
+
+  .category-label {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--cat-color);
+    margin-bottom: 1rem;
+    padding-left: 0.25rem;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+  }
+</style>

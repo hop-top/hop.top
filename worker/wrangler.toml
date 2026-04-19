@@ -1,0 +1,11 @@
+name = "hop-top-worker"
+main = "src/index.ts"
+compatibility_date = "2024-03-09"
+
+routes = [
+	{ pattern = "hop.top/*", zone_name = "hop.top" }
+]
+
+[vars]
+# The target Pages site
+SITE_URL = "https://hop-top-site.pages.dev"
