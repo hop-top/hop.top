@@ -12,7 +12,7 @@ app.get('/', (c) => c.html(landingPage()))
 
 // Static asset proxy (Starlight _astro, pagefind, fonts, etc.)
 app.all(
-  '/:path{(_astro|favicon\\.svg|houston\\.webp|starlight|pagefind|fonts|images)/.*}',
+  '/:path{((_astro|houston\\.webp|starlight|pagefind|fonts|images)/.*|favicon\\.svg)}',
   async (c) => {
     const resp = await proxyAsset(c)
     if (resp) return resp
