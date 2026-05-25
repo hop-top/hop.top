@@ -1,6 +1,4 @@
 import { Hono } from 'hono'
-import type { Context } from 'hono'
-import { REPOS } from './repos'
 
 type Bindings = {
   SITE_URL: string
@@ -11,36 +9,19 @@ type Bindings = {
 const app = new Hono<{ Bindings: Bindings }>()
 
 const SAFE_HEADERS = new Set([
-  'accept',
-  'accept-language',
-  'accept-encoding',
-  'user-agent',
-  'cache-control',
-  'if-none-match',
-  'if-modified-since',
+  'accept', 'accept-language', 'accept-encoding', 'user-agent',
+  'cache-control', 'if-none-match', 'if-modified-since',
 ])
-
-const BODY_METHODS = new Set(['POST', 'PUT', 'PATCH'])
 
 function safeHeaders(raw: Headers): Headers {
   const out = new Headers()
   for (const [k, v] of raw.entries()) {
-    if (SAFE_HEADERS.has(k.toLowerCase())) {
-      out.set(k, v)
-    }
+    if (SAFE_HEADERS.has(k.toLowerCase())) out.set(k, v)
   }
   return out
 }
 
-// Subdomains that should be proxied with Access headers and HTML rewriting
-// We include all repo names except the main 'hop' toolkit repo
-const PROXIED_SUBDOMAINS = Object.keys(REPOS).filter(
-  name => name !== 'hop' && !name.includes('/')
-)
-
-// Helper for Go vanity response
-export const goVanity = (importPath: string, repoUrl: string) => {
-  return `<!DOCTYPE html>
+export const goVanity = (importPath: string, repoUrl: string) => `<!DOCTYPE html>
 <html>
 <head>
 <meta name="go-import" content="${importPath} git ${repoUrl}">
@@ -51,188 +32,83 @@ export const goVanity = (importPath: string, repoUrl: string) => {
 Redirecting to <a href="${repoUrl}">${repoUrl}</a>...
 </body>
 </html>`
-}
 
-// Helper to proxy to a subdomain with headers and rewriting
-async function proxyToSubdomain(
-  c: Context<{ Bindings: Bindings }>,
-  subdomain: string,
-) {
-  const url = new URL(c.req.url)
-  const targetHost = `${subdomain}.hop.top`
-  url.hostname = targetHost
-  url.pathname = url.pathname.replace(new RegExp(`^\\/${subdomain}`), '') || '/'
-
-  const headers = safeHeaders(c.req.raw.headers)
-  headers.set('CF-Access-Client-Id', c.env.X402_CLIENT_ID || '')
-  headers.set('CF-Access-Client-Secret', c.env.X402_CLIENT_SECRET || '')
-
+// Resolve a vanity pkg name to a GitHub URL.
+// 1. Try the Homebrew formula in hop-top/homebrew-tap (cached at Cloudflare edge).
+// 2. Fall back to the convention: github.com/hop-top/<pkg>.
+export async function resolveRepoUrl(pkg: string): Promise<string> {
+  const fallback = `https://github.com/hop-top/${pkg}`
   try {
-    const response = await fetch(url.toString(), {
-      method: c.req.method,
-      headers,
-      body: BODY_METHODS.has(c.req.method) ? c.req.raw.body : undefined,
-      redirect: 'manual'
-    })
-
-    // Cloudflare connection errors => fallback to GitHub
-    if (response.status === 522 || response.status === 523) {
-      throw new Error('Subdomain not reachable')
-    }
-
-    // Only rewrite HTML content
-    const contentType = response.headers.get('Content-Type') || ''
-    if (contentType.includes('text/html')) {
-      return new HTMLRewriter()
-        .on('link', {
-          element(el) {
-            const href = el.getAttribute('href')
-            if (
-              href?.startsWith('/') &&
-              !href.startsWith(`/${subdomain}`) &&
-              !PROXIED_SUBDOMAINS.some(s => href.startsWith(`/${s}/`))
-            ) {
-              el.setAttribute('href', `/${subdomain}${href}`)
-            }
-          }
-        })
-        .on('script', {
-          element(el) {
-            const src = el.getAttribute('src')
-            if (
-              src?.startsWith('/') &&
-              !src.startsWith(`/${subdomain}`) &&
-              !PROXIED_SUBDOMAINS.some(s => src.startsWith(`/${s}/`))
-            ) {
-              el.setAttribute('src', `/${subdomain}${src}`)
-            }
-          }
-        })
-        .on('img', {
-          element(el) {
-            const src = el.getAttribute('src')
-            if (
-              src?.startsWith('/') &&
-              !src.startsWith(`/${subdomain}`) &&
-              !PROXIED_SUBDOMAINS.some(s => src.startsWith(`/${s}/`))
-            ) {
-              el.setAttribute('src', `/${subdomain}${src}`)
-            }
-          }
-        })
-        .on('a', {
-          element(el) {
-            const href = el.getAttribute('href')
-            if (
-              href?.startsWith('/') &&
-              !href.startsWith(`/${subdomain}`) &&
-              !PROXIED_SUBDOMAINS.some(s => href.startsWith(`/${s}/`))
-            ) {
-              el.setAttribute('href', `/${subdomain}${href}`)
-            }
-          }
-        })
-        .transform(response)
-    }
-
-    return response
-  } catch (e) {
-    return c.redirect(REPOS[subdomain])
+    const res = await fetch(
+      `https://raw.githubusercontent.com/hop-top/homebrew-tap/main/${pkg}.rb`,
+      { cf: { cacheTtl: 3600, cacheEverything: true } } as RequestInit,
+    )
+    if (!res.ok) return fallback
+    const formula = await res.text()
+    const m = formula.match(/^\s*homepage\s+"([^"]+)"/m)
+    return m?.[1] ?? fallback
+  } catch {
+    return fallback
   }
 }
 
-// Proxy static assets that might be requested without the subdomain prefix
+function refererSubdomain(referer: string): string | null {
+  try {
+    const url = new URL(referer)
+    if (!url.hostname.endsWith('.hop.top')) return null
+    const sub = url.hostname.slice(0, -'.hop.top'.length)
+    return sub && !sub.includes('.') ? sub : null
+  } catch {
+    return null
+  }
+}
+
+// Static assets requested without subdomain prefix — proxy to the referer's subdomain.
 app.all(
   '/:path{((_astro|houston\\.webp|starlight|pagefind|fonts|images)/.*|favicon\\.svg)}',
   async (c) => {
-    const referer = c.req.header('referer') || ''
-    // Sort by length descending to avoid prefix collisions (e.g. xrr vs xrr-rs)
-    const sorted = [...PROXIED_SUBDOMAINS].sort((a, b) => b.length - a.length)
-    const subdomain = sorted.find(s => {
-      try {
-        const refUrl = new URL(referer)
-        const firstSeg = refUrl.pathname.split('/')[1]
-        return firstSeg === s
-      } catch { return false }
-    })
+    const sub = refererSubdomain(c.req.header('referer') || '')
 
-    if (subdomain) {
+    if (sub) {
       const url = new URL(c.req.url)
-      const targetHost = `${subdomain}.hop.top`
-      url.hostname = targetHost
-
+      url.hostname = `${sub}.hop.top`
       const headers = safeHeaders(c.req.raw.headers)
       headers.set('CF-Access-Client-Id', c.env.X402_CLIENT_ID || '')
       headers.set('CF-Access-Client-Secret', c.env.X402_CLIENT_SECRET || '')
-
       try {
-        return await fetch(url.toString(), {
-          method: c.req.method,
-          headers,
-          body: BODY_METHODS.has(c.req.method) ? c.req.raw.body : undefined,
-        })
-      } catch (e) {
-        // Asset failed to proxy, continue to main site fallback
-      }
+        return await fetch(url.toString(), { method: c.req.method, headers })
+      } catch {}
     }
 
-    // Fallthrough to main site proxy
     const url = new URL(c.req.url)
     const siteUrl = new URL(c.env.SITE_URL)
     url.hostname = siteUrl.hostname
     url.protocol = siteUrl.protocol
     return fetch(new Request(url.toString(), c.req.raw))
-  }
+  },
 )
 
-// Go vanity and domain routes
-app.all('/:pkg/:path{.+}?', async (c, next) => {
+// Single-segment paths: go-vanity OR redirect to the resolved GitHub URL.
+app.all('/:pkg', async (c) => {
   const pkg = c.req.param('pkg')
-  const subpath = c.req.param('path') || ''
   const goGet = c.req.query('go-get') === '1'
 
-  // Check submodule key first (e.g. "uri/completions")
-  if (goGet && subpath) {
-    const subKey = `${pkg}/${subpath.split('/')[0]}`
-    const subUrl = REPOS[subKey]
-    if (subUrl) {
-      return c.html(goVanity(`hop.top/${subKey}`, subUrl))
-    }
-  }
+  // Reserve x[number] as a free namespace for future x402-style protocols.
+  if (/^x\d+$/.test(pkg) && pkg !== 'x402') return c.notFound()
 
-  // Handle other x[number] patterns (except ones explicitly in REPOS)
-  if (/^x\d+$/.test(pkg) && !REPOS[pkg]) {
-    return c.notFound()
-  }
-
-  // If it's a known repo and NOT a go-get request, try proxying it
-  if (PROXIED_SUBDOMAINS.includes(pkg) && !goGet) {
-    return proxyToSubdomain(c, pkg)
-  }
-
-  // Go vanity logic from dynamic REPOS map
-  const repoUrl = REPOS[pkg]
-  if (!repoUrl) {
-    return next()
-  }
-
-  if (goGet) {
-    return c.html(goVanity(`hop.top/${pkg}`, repoUrl))
-  }
-
+  const repoUrl = await resolveRepoUrl(pkg)
+  if (goGet) return c.html(goVanity(`hop.top/${pkg}`, repoUrl))
   return c.redirect(repoUrl)
 })
 
-// Main site proxy
+// Fallthrough: proxy everything else to the main site.
 app.all('*', async (c) => {
   const url = new URL(c.req.url)
   const siteUrl = new URL(c.env.SITE_URL)
   url.hostname = siteUrl.hostname
   url.protocol = siteUrl.protocol
   url.port = siteUrl.port
-
-  const request = new Request(url.toString(), c.req.raw)
-  return fetch(request)
+  return fetch(new Request(url.toString(), c.req.raw))
 })
 
 export default app
