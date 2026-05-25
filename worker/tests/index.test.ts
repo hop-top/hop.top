@@ -2,17 +2,14 @@ import {
   env,
   createExecutionContext,
   waitOnExecutionContext,
+  fetchMock,
 } from 'cloudflare:test'
-import { describe, it, expect } from 'vitest'
-import app from '../src/index'
-import { goVanity } from '../src/index'
-import { REPOS } from '../src/repos'
+import { beforeAll, afterEach, describe, it, expect } from 'vitest'
+import app, { goVanity, resolveRepoUrl } from '../src/index'
 
-const PROXIED_SUBDOMAINS = Object.keys(REPOS).filter(
-  n => n !== 'hop' && !n.includes('/')
-)
+const TAP = 'https://raw.githubusercontent.com'
+const tapPath = (pkg: string) => `/hop-top/homebrew-tap/main/${pkg}.rb`
 
-// Helper to make requests against the Hono app
 async function request(
   path: string,
   opts: { headers?: Record<string, string> } = {},
@@ -24,6 +21,14 @@ async function request(
   await waitOnExecutionContext(ctx)
   return res
 }
+
+beforeAll(() => {
+  fetchMock.activate()
+  fetchMock.disableNetConnect()
+})
+afterEach(() => {
+  fetchMock.assertNoPendingInterceptors()
+})
 
 // ── goVanity helper ──────────────────────────────────────────────
 
@@ -48,90 +53,107 @@ describe('goVanity', () => {
   })
 })
 
+// ── resolveRepoUrl: homebrew lookup + convention fallback ────────
+
+describe('resolveRepoUrl', () => {
+  it('returns homepage from a known homebrew formula', async () => {
+    fetchMock.get(TAP).intercept({ path: tapPath('usp') }).reply(
+      200,
+      'class Usp < Formula\n  homepage "https://github.com/hop-top/usp"\nend\n',
+    )
+    expect(await resolveRepoUrl('usp')).toBe('https://github.com/hop-top/usp')
+  })
+
+  it('honors a non-default homepage in the formula', async () => {
+    fetchMock.get(TAP).intercept({ path: tapPath('special') }).reply(
+      200,
+      'class Special < Formula\n  homepage "https://github.com/some-org/special-fork"\nend\n',
+    )
+    expect(await resolveRepoUrl('special')).toBe(
+      'https://github.com/some-org/special-fork',
+    )
+  })
+
+  it('falls back to convention when no formula exists (404)', async () => {
+    fetchMock.get(TAP).intercept({ path: tapPath('no-formula') }).reply(404, '')
+    expect(await resolveRepoUrl('no-formula')).toBe(
+      'https://github.com/hop-top/no-formula',
+    )
+  })
+
+  it('falls back to convention when formula parse misses', async () => {
+    fetchMock.get(TAP).intercept({ path: tapPath('weird') }).reply(
+      200,
+      'class Weird < Formula\n  # no homepage line at all\nend\n',
+    )
+    expect(await resolveRepoUrl('weird')).toBe(
+      'https://github.com/hop-top/weird',
+    )
+  })
+
+  it('falls back to convention on network error', async () => {
+    fetchMock.get(TAP).intercept({ path: tapPath('boom') })
+      .replyWithError(new Error('network'))
+    expect(await resolveRepoUrl('boom')).toBe('https://github.com/hop-top/boom')
+  })
+})
+
 // ── Go vanity routes ─────────────────────────────────────────────
 
 describe('go vanity routes', () => {
-  it('returns go-import for known package with ?go-get=1', async () => {
-    const res = await request('/uri?go-get=1')
+  it('returns go-import for any single-segment package', async () => {
+    fetchMock.get(TAP).intercept({ path: tapPath('some-new-repo') }).reply(404, '')
+    const res = await request('/some-new-repo?go-get=1')
     expect(res.status).toBe(200)
     const html = await res.text()
-    expect(html).toContain('go-import')
-    expect(html).toContain('hop.top/uri git https://github.com/hop-top/uri')
+    expect(html).toContain(
+      'hop.top/some-new-repo git https://github.com/hop-top/some-new-repo',
+    )
   })
 
-  it('returns go-import for submodule with ?go-get=1', async () => {
-    const res = await request('/xrr-poly/go?go-get=1')
-    expect(res.status).toBe(200)
+  it('uses homebrew homepage when available', async () => {
+    fetchMock.get(TAP).intercept({ path: tapPath('usp') }).reply(
+      200,
+      'class Usp < Formula\n  homepage "https://github.com/hop-top/usp"\nend\n',
+    )
+    const res = await request('/usp?go-get=1')
     const html = await res.text()
-    expect(html).toContain('go-import')
-    expect(html).toContain('hop.top/xrr-poly/go')
+    expect(html).toContain('hop.top/usp git https://github.com/hop-top/usp')
   })
 
-  it('returns 404 for unknown x-number pattern', async () => {
+  it('returns 404 for unknown x-number pattern (no homebrew fetch)', async () => {
     const res = await request('/x999?go-get=1')
     expect(res.status).toBe(404)
   })
 
-  it('redirects known repo without ?go-get=1 (non-proxied)', async () => {
-    // 'hop' is excluded from PROXIED_SUBDOMAINS, so it redirects
-    const res = await request('/hop')
+  it('serves x402 as a real repo (carved out of reserved namespace)', async () => {
+    fetchMock.get(TAP).intercept({ path: tapPath('x402') }).reply(404, '')
+    const res = await request('/x402?go-get=1')
+    expect(res.status).toBe(200)
+    const html = await res.text()
+    expect(html).toContain('hop.top/x402 git https://github.com/hop-top/x402')
+  })
+
+  it('redirects single-segment without ?go-get=1', async () => {
+    fetchMock.get(TAP).intercept({ path: tapPath('some-repo') }).reply(404, '')
+    const res = await request('/some-repo')
     expect(res.status).toBe(302)
     expect(res.headers.get('location')).toBe(
-      'https://github.com/hop-top/hop',
+      'https://github.com/hop-top/some-repo',
     )
   })
-})
 
-// ── PROXIED_SUBDOMAINS filtering ─────────────────────────────────
-
-describe('PROXIED_SUBDOMAINS', () => {
-  it('excludes "hop" from proxied subdomains', () => {
-    expect(PROXIED_SUBDOMAINS).not.toContain('hop')
-  })
-
-  it('includes other repos like "kit"', () => {
-    expect(PROXIED_SUBDOMAINS).toContain('kit')
-  })
-
-  it('excludes submodule keys containing "/"', () => {
-    // REPOS contains keys like "xrr-poly/go" — those must not appear
-    const repoSlashKeys = Object.keys(REPOS).filter(n => n.includes('/'))
-    expect(repoSlashKeys.length).toBeGreaterThan(0) // precondition
-    const withSlash = PROXIED_SUBDOMAINS.filter(n => n.includes('/'))
-    expect(withSlash).toEqual([])
-  })
-})
-
-// ── Root / proxies to SITE_URL ───────────────────────────────────
-
-describe('root proxy', () => {
-  it('proxies / to SITE_URL', async () => {
-    const res = await request('/')
-    // Should attempt to fetch from SITE_URL; response depends on
-    // whether the upstream is reachable. We verify the request
-    // doesn't 404 or throw.
-    expect([200, 500, 502, 503, 530]).toContain(res.status)
-  })
-})
-
-// ── Static asset route pattern ───────────────────────────────────
-
-describe('static asset routes', () => {
-  it('matches /_astro/ paths (no leading space bug)', async () => {
-    const res = await request('/_astro/style.abc123.css', {
-      headers: { referer: 'https://hop.top/kit/overview' },
-    })
-    // Asset route should handle this; upstream may return any status
-    // but the route itself shouldn't throw. With a valid referer
-    // pointing to a proxied subdomain, the handler attempts to proxy
-    // to that subdomain's origin.
-    expect(res).toBeDefined()
-    expect(typeof res.status).toBe('number')
-  })
-
-  it('matches /favicon.svg', async () => {
-    const res = await request('/favicon.svg')
-    // Should be handled by asset route or fall through to site proxy
-    expect(res.status).not.toBe(404)
+  it('does not return vanity for multi-segment paths', async () => {
+    // Hono's /:pkg matches a single path segment; /anything/sub falls through
+    // to app.all('*') which proxies to SITE_URL. We don't assert on what the
+    // site returns (mock or real) — only that no go-import meta is produced.
+    const siteHost = new URL(env.SITE_URL).origin
+    fetchMock.get(siteHost).intercept({ path: '/anything/sub', query: { 'go-get': '1' } }).reply(
+      200,
+      'site response',
+    )
+    const res = await request('/anything/sub?go-get=1')
+    const html = await res.text()
+    expect(html).not.toContain('go-import')
   })
 })

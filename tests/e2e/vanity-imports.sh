@@ -6,16 +6,14 @@ PASS=0
 FAIL=0
 ERRORS=()
 
-# Known packages to test (subset of repos.ts)
+# Sample packages to smoke-test. The worker resolves any name via
+# homebrew-tap formula → convention fallback, so this list is a curated
+# subset of repos worth pinging on each deploy — not an authoritative
+# allowlist (none exists anymore).
 PACKAGES=(
   kit tlc hdl uri aps cxr xrr xrr-ts xrr-rs xrr-php xrr-py
   xrr-poly git ibr mdl rux ben aom rlz stk upgrade wsm tip
   eva eva-pkg eva-ee hop rsx par gym mde tab hdox
-)
-
-# Submodule vanity: key=import-path value=expected-repo
-declare -A SUBMODULES=(
-  ["xrr-poly/go"]="https://github.com/hop-top/xrr-poly"
 )
 
 pass() { PASS=$((PASS + 1)); echo "  PASS: $1"; }
@@ -23,10 +21,11 @@ fail() { FAIL=$((FAIL + 1)); ERRORS+=("$1"); echo "  FAIL: $1"; }
 
 check_vanity() {
   local pkg="$1"
-  local expected_repo="https://github.com/hop-top/${pkg%%/*}"
+  local expected_repo="https://github.com/hop-top/${pkg}"
   local import_path="hop.top/${pkg}"
 
-  # Allow override for submodules
+  # Allow caller-provided override for repos whose homebrew formula sets
+  # a non-default homepage (e.g. fork or external mirror).
   if [ "${2:-}" != "" ]; then
     expected_repo="$2"
   fi
@@ -93,15 +92,10 @@ for pkg in "${PACKAGES[@]}"; do
   check_vanity "$pkg"
 done
 
-# Test submodule vanity imports
-for pkg in "${!SUBMODULES[@]}"; do
-  check_vanity "$pkg" "${SUBMODULES[$pkg]}"
-done
-
-# Negative cases
+# Negative cases (only x[number] is reserved; arbitrary names now resolve
+# via convention fallback and return 200, so no point asserting 404 on them).
 echo
 echo "--- Negative cases ---"
-check_negative "nonexistent-package-xyz"
 check_negative "x999"
 
 echo
