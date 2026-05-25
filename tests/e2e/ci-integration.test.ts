@@ -47,9 +47,9 @@ describe('ci-integration: workflow files', () => {
     expect(raw).toContain('tests/e2e/vanity-imports.sh');
   });
 
-  it('repo-map.yml uses GH_TOKEN secret', () => {
+  it('repo-map.yml wires GH_TOKEN for the gh CLI step', () => {
     const { raw } = loadWorkflow('repo-map.yml');
-    expect(raw).toContain('secrets.GH_TOKEN');
+    expect(raw).toMatch(/GH_TOKEN:\s*\$\{\{\s*github\.token\s*\}\}/);
   });
 
   it('repo-map.yml uses CLOUDFLARE_API_TOKEN secret', () => {
