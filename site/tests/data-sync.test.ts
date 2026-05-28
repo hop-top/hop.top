@@ -13,13 +13,13 @@ describe('data sync baseline', () => {
         "aom",
         "aps",
         "ben",
+        "cite",
         "cxr",
         "eva",
         "eva-ee",
         "eva-pkg",
         "git",
         "gym",
-        "hdl",
         "hdox",
         "hop",
         "ibr",
@@ -35,7 +35,6 @@ describe('data sync baseline', () => {
         "tip",
         "tlc",
         "upgrade",
-        "uri",
         "wsm",
         "x402",
         "xrr",
@@ -57,7 +56,7 @@ describe('data sync baseline', () => {
       {
         "ai": 3,
         "cli": 17,
-        "core": 4,
+        "core": 3,
         "cross-runtime": 6,
         "infra": 2,
         "sdk": 2,
@@ -69,8 +68,8 @@ describe('data sync baseline', () => {
     // Known projects that exist in docs-worker (P3) registry.
     // Update this list when docs-worker/src/projects.ts changes.
     const docsWorkerProjects = [
-      'aps', 'eva', 'gym', 'hdl', 'ibr', 'kit',
-      'rsx', 'tlc', 'uri', 'wsm', 'xrr',
+      'aps', 'cite', 'eva', 'gym', 'ibr', 'kit',
+      'rsx', 'tlc', 'wsm', 'xrr',
       'xrr-php', 'xrr-py', 'xrr-rs', 'xrr-ts',
     ];
 

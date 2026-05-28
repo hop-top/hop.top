@@ -32,18 +32,11 @@ export const projects: Project[] = [
     install: 'go get hop.top/kit',
   },
   {
-    name: 'hdl',
-    repo: 'https://github.com/hop-top/hdl',
-    description: 'Custom URI scheme handler registration for Go.',
+    name: 'cite',
+    repo: 'https://github.com/hop-top/poly-cite',
+    description: 'Polyglot toolkit for custom URI schemes and OS handler registration.',
     category: 'core',
-    install: 'go get hop.top/hdl',
-  },
-  {
-    name: 'uri',
-    repo: 'https://github.com/hop-top/uri',
-    description: 'Structured identifier parsing and manipulation.',
-    category: 'core',
-    install: 'go get hop.top/uri',
+    install: 'go get hop.top/cite',
   },
   {
     name: 'mdl',
