@@ -52,6 +52,13 @@ export async function resolveRepoUrl(pkg: string): Promise<string> {
   }
 }
 
+// Specs are not Go packages. Exclude them from vanity-import resolution so
+// `go get hop.top/spec-crtx` does NOT return a redirect; specs are served
+// only via spec.hop.top/<name>/<version>/<file>.
+export function isSpecName(pkg: string): boolean {
+  return pkg === 'spec' || pkg.startsWith('spec-')
+}
+
 function refererSubdomain(referer: string): string | null {
   try {
     const url = new URL(referer)
@@ -88,6 +95,49 @@ app.all(
   },
 )
 
+// spec.hop.top/<name>/<version>/<file> — serve canonical schema/spec
+// documents from github.com/hop-top/spec-<name>/raw/main/specs/<version>/<file>.
+// Specs use a dedicated subdomain so they stay disjoint from the
+// Go-vanity package namespace at hop.top/<pkg>.
+//
+// Guarded by hostname so the same /:name/:version/:file shape on hop.top
+// (or any other subdomain) falls through to the site proxy unchanged.
+app.use('/:name/:version/:file{.+}', async (c, next) => {
+  const url = new URL(c.req.url)
+  if (url.hostname !== 'spec.hop.top') return next()
+
+  const name = c.req.param('name')
+  const version = c.req.param('version')
+  const file = c.req.param('file')
+
+  // Basic guards: only allow well-formed segments to prevent traversal /
+  // arbitrary refspecs from leaking through into the raw.githubusercontent
+  // fetch.
+  const safe = /^[A-Za-z0-9._-]+$/
+  if (
+    !safe.test(name) ||
+    name.startsWith('.') ||
+    !safe.test(version) ||
+    version.startsWith('.') ||
+    !/^[A-Za-z0-9._/-]+$/.test(file) ||
+    file.includes('..') ||
+    file.startsWith('/') ||
+    file.startsWith('.')
+  ) {
+    return c.notFound()
+  }
+
+  const upstream = `https://raw.githubusercontent.com/hop-top/spec-${name}/main/specs/${version}/${file}`
+  const res = await fetch(upstream, { cf: { cacheTtl: 300, cacheEverything: true } } as RequestInit)
+  if (!res.ok) return c.notFound()
+  const body = await res.arrayBuffer()
+  const headers = new Headers()
+  const upstreamType = res.headers.get('content-type')
+  if (upstreamType) headers.set('content-type', upstreamType)
+  headers.set('cache-control', 'public, max-age=300')
+  return new Response(body, { status: 200, headers })
+})
+
 // Single-segment paths: go-vanity OR redirect to the resolved GitHub URL.
 app.all('/:pkg', async (c) => {
   const pkg = c.req.param('pkg')
@@ -95,6 +145,9 @@ app.all('/:pkg', async (c) => {
 
   // Reserve x[number] as a free namespace for future x402-style protocols.
   if (/^x\d+$/.test(pkg) && pkg !== 'x402') return c.notFound()
+
+  // Specs are not Go packages — exclude from vanity-import resolution.
+  if (isSpecName(pkg)) return c.notFound()
 
   const repoUrl = await resolveRepoUrl(pkg)
   if (goGet) return c.html(goVanity(`hop.top/${pkg}`, repoUrl))
