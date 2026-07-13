@@ -238,4 +238,11 @@ export const projects: Project[] = [
     description: 'Enterprise evaluation extensions.',
     category: 'ai',
   },
+  {
+    name: 'orb',
+    repo: 'https://github.com/hop-top/orb',
+    description: 'Graph-native runtime for modeling and operating organizations as living worlds of humans, agents, and processes.',
+    category: 'infra',
+    install: 'go install hop.top/orb@latest',
+  },
 ];
