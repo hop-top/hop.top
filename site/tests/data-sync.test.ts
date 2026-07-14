@@ -26,6 +26,7 @@ describe('data sync baseline', () => {
         "kit",
         "mde",
         "mdl",
+        "orb",
         "par",
         "rlz",
         "rsx",
@@ -58,7 +59,7 @@ describe('data sync baseline', () => {
         "cli": 17,
         "core": 3,
         "cross-runtime": 6,
-        "infra": 2,
+        "infra": 3,
         "sdk": 2,
       }
     `);
