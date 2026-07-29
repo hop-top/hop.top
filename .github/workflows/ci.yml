@@ -22,10 +22,10 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm install
-          cd worker && npm install && cd ..
-          cd docs-worker && npm install && cd ..
-          cd site && npm install && cd ..
+          npm ci
+          cd worker && npm ci && cd ..
+          cd docs-worker && npm ci && cd ..
+          cd site && npm ci && cd ..
 
       - name: Lint
         run: npm run lint
