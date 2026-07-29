@@ -105,7 +105,6 @@ describe('resolveRepoUrl', () => {
 
 describe('go vanity routes', () => {
   it('returns go-import for any single-segment package', async () => {
-    fetchMock.get(TAP).intercept({ path: tapPath('some-new-repo') }).reply(404, '')
     const res = await request('/some-new-repo?go-get=1')
     expect(res.status).toBe(200)
     const html = await res.text()
@@ -114,14 +113,24 @@ describe('go vanity routes', () => {
     )
   })
 
-  it('uses homebrew homepage when available', async () => {
-    fetchMock.get(TAP).intercept({ path: tapPath('usp') }).reply(
-      200,
-      'class Usp < Formula\n  homepage "https://github.com/hop-top/usp"\nend\n',
-    )
-    const res = await request('/usp?go-get=1')
+  it('ignores homebrew homepage for go-get — modules live on the mirror', async () => {
+    // Formula homepage points at the polyglot monolith; go-get must still
+    // resolve to the hop-top/<pkg> mirror, whose tags Go can fetch.
+    const res = await request('/c12n?go-get=1')
     const html = await res.text()
-    expect(html).toContain('hop.top/usp git https://github.com/hop-top/usp')
+    expect(html).toContain('hop.top/c12n git https://github.com/hop-top/c12n')
+  })
+
+  it('still uses homebrew homepage for the human redirect', async () => {
+    fetchMock.get(TAP).intercept({ path: tapPath('c12n') }).reply(
+      200,
+      'class C12n < Formula\n  homepage "https://github.com/hop-top/poly-c12n"\nend\n',
+    )
+    const res = await request('/c12n')
+    expect(res.status).toBe(302)
+    expect(res.headers.get('location')).toBe(
+      'https://github.com/hop-top/poly-c12n',
+    )
   })
 
   it('returns 404 for unknown x-number pattern (no homebrew fetch)', async () => {
@@ -130,7 +139,6 @@ describe('go vanity routes', () => {
   })
 
   it('serves x402 as a real repo (carved out of reserved namespace)', async () => {
-    fetchMock.get(TAP).intercept({ path: tapPath('x402') }).reply(404, '')
     const res = await request('/x402?go-get=1')
     expect(res.status).toBe(200)
     const html = await res.text()
