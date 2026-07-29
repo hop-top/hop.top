@@ -149,9 +149,14 @@ app.all('/:pkg', async (c) => {
   // Specs are not Go packages — exclude from vanity-import resolution.
   if (isSpecName(pkg)) return c.notFound()
 
-  const repoUrl = await resolveRepoUrl(pkg)
-  if (goGet) return c.html(goVanity(`hop.top/${pkg}`, repoUrl))
-  return c.redirect(repoUrl)
+  // Go modules always live on the hop-top/<pkg> mirror. The Homebrew
+  // homepage may point elsewhere (e.g. a polyglot monolith whose tags the
+  // Go toolchain cannot resolve), so it is only used for the human
+  // browser redirect below — never for go-get resolution.
+  if (goGet) {
+    return c.html(goVanity(`hop.top/${pkg}`, `https://github.com/hop-top/${pkg}`))
+  }
+  return c.redirect(await resolveRepoUrl(pkg))
 })
 
 // Fallthrough: proxy everything else to the main site.
