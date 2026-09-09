@@ -11,9 +11,9 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@worker': path.resolve(__dirname, '../../worker/src'),
-      '@site': path.resolve(__dirname, '../../site/src'),
-      '@docs-worker': path.resolve(__dirname, '../../docs-worker/src'),
+      '@router': path.resolve(__dirname, '../../apps/router/src'),
+      '@site': path.resolve(__dirname, '../../apps/site/src'),
+      '@docs-router': path.resolve(__dirname, '../../apps/docs-router/src'),
     },
   },
 });

@@ -6,18 +6,18 @@ import { fileURLToPath } from 'url';
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const ROOT = resolve(__dirname, '../..');
 
-describe('worker-site handoff', () => {
+describe('router-site handoff', () => {
   it('Astro site config targets hop.top', () => {
     const config = readFileSync(
-      resolve(ROOT, 'site/astro.config.mjs'),
+      resolve(ROOT, 'apps/site/astro.config.mjs'),
       'utf-8',
     );
     expect(config).toContain("site: 'https://hop.top'");
   });
 
-  it('worker wrangler.toml defines SITE_URL variable', () => {
+  it('router wrangler.toml defines SITE_URL variable', () => {
     const wrangler = readFileSync(
-      resolve(ROOT, 'worker/wrangler.toml'),
+      resolve(ROOT, 'apps/router/wrangler.toml'),
       'utf-8',
     );
     expect(wrangler).toMatch(/SITE_URL/);
@@ -25,19 +25,19 @@ describe('worker-site handoff', () => {
 
   it('site public assets include favicon.svg', () => {
     expect(
-      existsSync(resolve(ROOT, 'site/public/favicon.svg')),
+      existsSync(resolve(ROOT, 'apps/site/public/favicon.svg')),
     ).toBe(true);
   });
 
   it('site public assets include favicon.ico', () => {
     expect(
-      existsSync(resolve(ROOT, 'site/public/favicon.ico')),
+      existsSync(resolve(ROOT, 'apps/site/public/favicon.ico')),
     ).toBe(true);
   });
 
-  it('worker static-asset route covers _astro and favicon.svg', () => {
+  it('router static-asset route covers _astro and favicon.svg', () => {
     const src = readFileSync(
-      resolve(ROOT, 'worker/src/index.ts'),
+      resolve(ROOT, 'apps/router/src/index.ts'),
       'utf-8',
     );
     expect(src).toMatch(/_astro/);
@@ -48,21 +48,21 @@ describe('worker-site handoff', () => {
     // Verify Astro config + package.json exist (build itself is
     // expensive; CI runs `npm run build` separately)
     expect(
-      existsSync(resolve(ROOT, 'site/astro.config.mjs')),
+      existsSync(resolve(ROOT, 'apps/site/astro.config.mjs')),
     ).toBe(true);
     expect(
-      existsSync(resolve(ROOT, 'site/package.json')),
+      existsSync(resolve(ROOT, 'apps/site/package.json')),
     ).toBe(true);
 
     const pkg = JSON.parse(
-      readFileSync(resolve(ROOT, 'site/package.json'), 'utf-8'),
+      readFileSync(resolve(ROOT, 'apps/site/package.json'), 'utf-8'),
     );
     expect(pkg.scripts?.build).toBe('astro build');
   });
 
-  it('docs-worker wrangler.toml exists', () => {
+  it('docs-router wrangler.toml exists', () => {
     expect(
-      existsSync(resolve(ROOT, 'docs-worker/wrangler.toml')),
+      existsSync(resolve(ROOT, 'apps/docs-router/wrangler.toml')),
     ).toBe(true);
   });
 });

@@ -19,7 +19,7 @@ Thanks for your interest in contributing!
 make install
 ```
 
-This installs dependencies for the root package, both Workers, and the site.
+This installs dependencies for the root tooling and all four applications.
 Run `devbox shell` first when using the repository's pinned toolchain outside
 the Dev Container.
 

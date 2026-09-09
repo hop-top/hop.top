@@ -1,0 +1,22 @@
+{
+  "name": "hop.top",
+  "version": "0.0.0",
+  "description": "Command-line entry point for the hop.top ecosystem hub",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "hop.top": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "author": "Jad Bitar <jadb@users.noreply.github.com>",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "commander": "^12.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}

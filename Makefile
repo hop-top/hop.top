@@ -12,15 +12,15 @@ SITE_TMUX_DIR ?= /tmp/ht-tmux
 check: lint test build links
 
 build:
-	npm run build
-	pnpm --dir docs-worker typecheck
-	npm --prefix site run build
+	npm --prefix apps/cli run build
+	pnpm --dir apps/docs-router typecheck
+	npm --prefix apps/site run build
 
 test:
 	npm test
-	npm --prefix worker test
-	pnpm --dir docs-worker test
-	npm --prefix site test
+	npm --prefix apps/router test
+	pnpm --dir apps/docs-router test
+	npm --prefix apps/site test
 	npm run test:e2e
 
 lint:
@@ -35,9 +35,10 @@ links:
 
 install:
 	npm ci
-	npm --prefix worker ci
-	pnpm --dir docs-worker install --frozen-lockfile
-	npm --prefix site ci
+	npm --prefix apps/cli ci
+	npm --prefix apps/router ci
+	pnpm --dir apps/docs-router install --frozen-lockfile
+	npm --prefix apps/site ci
 
 setup: install
 
@@ -45,7 +46,7 @@ post-create: install
 	$(MAKE) dev-start
 
 dev:
-	npm --prefix site run dev -- --host $(SITE_HOST) --port $(SITE_PORT)
+	npm --prefix apps/site run dev -- --host $(SITE_HOST) --port $(SITE_PORT)
 
 dev-start:
 	@mkdir -p "$(SITE_TMUX_DIR)"
@@ -55,7 +56,7 @@ dev-start:
 	else \
 		TMUX_TMPDIR="$(SITE_TMUX_DIR)" \
 		tmux new-session -d -s "$(SITE_SESSION)" \
-			"npm --prefix site run dev -- --host '$(SITE_HOST)' \
+			"npm --prefix apps/site run dev -- --host '$(SITE_HOST)' \
 			--port '$(SITE_PORT)' > '$(SITE_LOG_FILE)' 2>&1"; \
 		sleep 1; \
 		if TMUX_TMPDIR="$(SITE_TMUX_DIR)" \

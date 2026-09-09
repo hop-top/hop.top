@@ -27,9 +27,10 @@ jobs:
       - name: Install dependencies
         run: |
           npm ci
-          cd worker && npm ci && cd ..
-          pnpm --dir docs-worker install --frozen-lockfile
-          cd site && npm ci && cd ..
+          npm --prefix apps/cli ci
+          npm --prefix apps/router ci
+          pnpm --dir apps/docs-router install --frozen-lockfile
+          npm --prefix apps/site ci
 
       - name: Lint
         run: npm run lint
@@ -37,20 +38,20 @@ jobs:
       - name: Test (root)
         run: npm test
 
-      - name: Test (worker)
-        run: cd worker && npx vitest run
+      - name: Test (router)
+        run: npm --prefix apps/router test
 
-      - name: Test (docs-worker)
-        run: pnpm --dir docs-worker test
+      - name: Test (docs-router)
+        run: pnpm --dir apps/docs-router test
 
       - name: Test (site)
-        run: cd site && npx vitest run
+        run: npm --prefix apps/site test
 
       - name: Test (E2E)
         run: npm run test:e2e
 
-      - name: Build
-        run: npm run build
+      - name: Build (CLI)
+        run: npm --prefix apps/cli run build
 
       - name: Build (site)
-        run: cd site && npx astro build
+        run: npm --prefix apps/site run build

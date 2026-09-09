@@ -1,25 +1,19 @@
 {
-  "name": "hop.top",
+  "name": "@hop-top/workspace",
   "version": "0.0.0",
   "description": "Ecosystem hub — marketing site, edge router, Go vanity imports",
+  "private": true,
   "type": "module",
-  "main": "dist/index.js",
-  "bin": {
-    "hop.top": "dist/index.js"
-  },
   "scripts": {
-    "build": "tsc",
-    "lint": "eslint src/",
-    "format": "prettier --write src/",
+    "build": "npm --prefix apps/cli run build",
+    "lint": "eslint apps/cli/src/",
+    "format": "prettier --write apps/cli/src/",
     "test": "vitest run",
     "test:e2e": "vitest run --config tests/e2e/vitest.config.ts",
     "check": "npm run lint && npm run test"
   },
   "author": "Jad Bitar <jadb@users.noreply.github.com>",
   "license": "Apache-2.0",
-  "dependencies": {
-    "commander": "^12.0.0"
-  },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@typescript-eslint/eslint-plugin": "^8.0.0",

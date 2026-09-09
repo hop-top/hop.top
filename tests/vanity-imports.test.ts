@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { goVanity } from "../worker/src/index.js";
+import { goVanity } from "../apps/router/src/index.js";
 
 describe("goVanity", () => {
   it("generates correct go-import meta tag", () => {

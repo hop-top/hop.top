@@ -17,18 +17,18 @@ hop.top gives the [hop-top](https://github.com/hop-top) project family one publi
 | [`hop.top/sitemap-index.xml`](https://hop.top/sitemap-index.xml), [`robots.txt`](https://hop.top/robots.txt), [`llms.txt`](https://hop.top/llms.txt) | Ecosystem search and agent discovery |
 | [`docs.hop.top/sitemap.xml`](https://docs.hop.top/sitemap.xml), [`robots.txt`](https://docs.hop.top/robots.txt), [`llms.txt`](https://docs.hop.top/llms.txt) | Documentation search and agent discovery |
 
-Go package metadata resolves repositories through the hop-top Homebrew tap, with
-`github.com/hop-top/<package>` as the convention-based fallback. Ordinary package URLs serve
-the corresponding landing page.
+Go package metadata resolves directly to the canonical
+`github.com/hop-top/<package>` mirror. Ordinary package URLs serve the
+corresponding landing page.
 
 ## Components
 
 | Component | Purpose | Platform |
 |---|---|---|
-| [`worker/`](worker/) | Main routing, vanity imports, specification delivery | Cloudflare Workers |
-| [`site/`](site/) | Static ecosystem and package pages | Astro and Cloudflare Pages |
-| [`docs-worker/`](docs-worker/) | Documentation index, proxying, and shared navigation | Cloudflare Workers |
-| [`src/`](src/) | Minimal `hop.top` command shell | Node.js |
+| [`apps/router/`](apps/router/) | Main routing, vanity imports, specification delivery | Cloudflare Workers |
+| [`apps/site/`](apps/site/) | Static ecosystem and package pages | Astro and Cloudflare Pages |
+| [`apps/docs-router/`](apps/docs-router/) | Documentation index, proxying, and shared navigation | Cloudflare Workers |
+| [`apps/cli/`](apps/cli/) | Minimal `hop.top` command shell | Node.js |
 
 See [the architecture document](docs/ARCHITECTURE.md) for request flow, routing precedence,
 configuration, trust boundaries, and the registry model.
@@ -65,9 +65,10 @@ Install each deployable's dependencies:
 
 ```sh
 npm install
-npm --prefix worker install
-pnpm --dir docs-worker install --frozen-lockfile
-npm --prefix site install
+npm --prefix apps/cli install
+npm --prefix apps/router install
+pnpm --dir apps/docs-router install --frozen-lockfile
+npm --prefix apps/site install
 ```
 
 Run the same checks represented in CI:
@@ -75,28 +76,28 @@ Run the same checks represented in CI:
 ```sh
 npm run lint
 npm test
-npm --prefix worker test
-pnpm --dir docs-worker test
-npm --prefix site test
+npm --prefix apps/router test
+pnpm --dir apps/docs-router test
+npm --prefix apps/site test
 npm run test:e2e
-npm run build
-npm --prefix site run build
+npm --prefix apps/cli run build
+npm --prefix apps/site run build
 ```
 
 Run a service locally:
 
 ```sh
-npm --prefix worker run dev
-pnpm --dir docs-worker dev
-npm --prefix site run dev
+npm --prefix apps/router run dev
+pnpm --dir apps/docs-router dev
+npm --prefix apps/site run dev
 ```
 
 ## Adding or updating a project
 
-1. Update `site/src/data/projects.ts` for every project shown on hop.top.
+1. Update `apps/site/src/data/projects.ts` for every project shown on hop.top.
 2. If the project has a proxied documentation site, set its canonical `docs`
-   URL and update `docs-worker/src/projects.ts` as well.
-3. Run the site, docs Worker, and cross-component tests.
+   URL and update `apps/docs-router/src/projects.ts` as well.
+3. Run the site, docs router, and cross-component tests.
 4. Confirm `hop.top/<package>?go-get=1` resolves to the intended repository.
 
 The current registries are checked in and maintained manually. The
@@ -105,18 +106,19 @@ path to generating a single deterministic registry from GitHub repository metada
 explicit overrides.
 
 The site build automatically regenerates its sitemap, crawler policy, and agent index from
-the configured site URL and project registry. The docs Worker derives the same artifacts for
+the configured site URL and project registry. The docs router derives the same artifacts for
 `docs.hop.top` from its deployed documentation registry. Neither surface emits deployment
 timestamps, synthetic modification dates, or commit references, so unchanged source data
 produces unchanged discovery output.
 
 ## Deployment
 
-Merges to `main` that change `worker/` automatically deploy the main edge router. Successful
+Merges to `main` that change `apps/router/` automatically deploy the main edge router. Successful
 deployments trigger live vanity-import checks; those checks also run weekly.
 
-The site is configured as the `hop-top-site` Cloudflare Pages project. The docs Worker has its
-own Wrangler configuration but no automatic deployment workflow in this repository.
+The site is configured as the `hop-top-site` Cloudflare Pages project. Its
+Cloudflare build root must be `apps/site`. The docs router has its own Wrangler
+configuration but no automatic deployment workflow in this repository.
 
 Cloudflare credentials are required for manual deployment. Never commit Worker secrets.
 

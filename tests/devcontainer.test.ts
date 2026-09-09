@@ -48,11 +48,12 @@ describe("development container", () => {
   it("installs every deployable and starts the forwarded site", () => {
     expect(makefile).toMatch(/^post-create: install$/m);
     expect(makefile).toContain("npm ci");
-    expect(makefile).toContain("npm --prefix worker ci");
+    expect(makefile).toContain("npm --prefix apps/cli ci");
+    expect(makefile).toContain("npm --prefix apps/router ci");
     expect(makefile).toContain(
-      "pnpm --dir docs-worker install --frozen-lockfile",
+      "pnpm --dir apps/docs-router install --frozen-lockfile",
     );
-    expect(makefile).toContain("npm --prefix site ci");
+    expect(makefile).toContain("npm --prefix apps/site ci");
     expect(makefile).toMatch(/^dev-start:$/m);
     expect(makefile).toContain('tmux new-session -d -s "$(SITE_SESSION)"');
     expect(devcontainer.forwardPorts).toContain(4321);

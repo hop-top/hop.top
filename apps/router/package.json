@@ -1,5 +1,5 @@
 {
-  "name": "@hop-top/worker",
+  "name": "@hop-top/router",
   "version": "1.0.0",
   "description": "Cloudflare Worker for hop.top edge routing, Go vanity imports, and subdomain proxying",
   "private": true,

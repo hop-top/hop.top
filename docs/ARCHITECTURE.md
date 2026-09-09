@@ -12,7 +12,7 @@ flowchart LR
   router -->|site request| pages[Cloudflare Pages]
   router -->|Go vanity lookup| tap[hop-top/homebrew-tap]
   router -->|specification request| raw[GitHub raw content]
-  client -->|docs.hop.top| docs[hop-top-docs-worker]
+  client -->|docs.hop.top| docs[Docs router]
   docs -->|project documentation| project[project.hop.top]
 ```
 
@@ -20,17 +20,17 @@ The repository contains four independently configured Node projects:
 
 | Component | Location | Responsibility |
 |---|---|---|
-| Edge router | `worker/` | Routes `hop.top` and `spec.hop.top` requests |
-| Marketing site | `site/` | Builds the ecosystem homepage and project pages |
-| Documentation hub | `docs-worker/` | Proxies project documentation under `docs.hop.top` |
-| CLI shell | `src/` | Provides the currently minimal `hop.top` command |
+| Edge router | `apps/router/` | Routes `hop.top` and `spec.hop.top` requests |
+| Marketing site | `apps/site/` | Builds the ecosystem homepage and project pages |
+| Documentation hub | `apps/docs-router/` | Proxies project documentation under `docs.hop.top` |
+| CLI shell | `apps/cli/` | Provides the currently minimal `hop.top` command |
 
-The hosted services are the primary product. The root CLI currently exposes
+The hosted services are the primary product. The CLI currently exposes
 only Commander-generated help, version, format, and verbose options.
 
 ## Edge router
 
-`worker/src/index.ts` is a Hono application deployed as the
+`apps/router/src/index.ts` is a Hono application deployed as the
 `hop-top-router` Cloudflare Worker. It owns routes for `hop.top/*` and
 `spec.hop.top/*`.
 
@@ -49,11 +49,10 @@ Routes are evaluated in this order:
 
 ### Go vanity resolution
 
-For a vanity request, the router looks for
-`hop-top/homebrew-tap/<package>.rb` and reads its `homepage`. This supports
-repositories whose GitHub name differs from their vanity name. A missing,
-unreadable, or unparseable formula falls back to
-`https://github.com/hop-top/<package>`.
+For a vanity request, the router resolves directly to the canonical
+`https://github.com/hop-top/<package>` mirror. Human-facing package requests
+continue to the marketing site instead of using repository metadata as a
+redirect source.
 
 The response contains `go-import` and `go-source` metadata plus a timed link
 to the repository. Dynamic values are HTML-escaped before insertion. Formula
@@ -85,8 +84,8 @@ Access credentials are attached to those subdomain asset requests.
 
 ## Marketing site
 
-`site/` is an Astro static site deployed as the `hop-top-site` Cloudflare
-Pages project. `site/src/data/projects.ts` drives:
+`apps/site/` is an Astro static site deployed as the `hop-top-site` Cloudflare
+Pages project. `apps/site/src/data/projects.ts` drives:
 
 - the project count in the hero;
 - category groups and cards on the homepage; and
@@ -128,7 +127,7 @@ Host-owned sitemaps plus crawlable cross-links work across crawlers without
 that external configuration.
 
 Astro generates the main discovery artifacts at site build time, so Cloudflare
-Pages receives ordinary static files. The docs Worker renders its artifacts
+Pages receives ordinary static files. The docs router renders its artifacts
 from the documentation registry compiled into each deployment. No live GitHub
 or upstream-documentation request is required to serve them.
 
@@ -149,7 +148,7 @@ page—not from the deployment time or repository HEAD.
 
 ## Documentation hub
 
-`docs-worker/` is a separate Hono Worker bound to `docs.hop.top/*`.
+`apps/docs-router/` is a separate Hono Worker bound to `docs.hop.top/*`.
 
 - `/` renders a registry-driven documentation index.
 - `/sitemap.xml` lists the hub and registered documentation roots.
@@ -172,8 +171,8 @@ Two registries currently serve different publishing surfaces:
 
 | Registry | Fields | Consumer |
 |---|---|---|
-| `site/src/data/projects.ts` | name, repository, description, category, optional install command and docs URL | Astro site |
-| `docs-worker/src/projects.ts` | name, slug, repository, description, docs host, category | Documentation Worker |
+| `apps/site/src/data/projects.ts` | name, repository, description, category, optional install command and docs URL | Astro site |
+| `apps/docs-router/src/projects.ts` | name, slug, repository, description, docs host, category | Documentation router |
 
 The site contains the broader ecosystem. The documentation registry is the
 subset with a proxied documentation site. Tests validate each registry and
@@ -213,41 +212,45 @@ as Cloudflare Worker secrets and must never be committed.
 External dependencies are deliberately narrow:
 
 - Cloudflare Workers and Pages provide execution, routing, and caching.
-- GitHub raw content provides Homebrew formula and specification sources.
+- GitHub raw content provides canonical specification sources.
 - Project documentation hosts provide proxied HTML and assets.
 
 ## Build, test, and deployment
 
-CI installs dependencies independently for the root, Worker, docs Worker, and
-site. It then runs the root linter and all four test suites, performs the
-cross-component tests, builds the CLI, and builds the Astro site.
+CI installs dependencies independently for the root tooling and each
+application under `apps/`. It then runs the root linter and all test suites,
+performs the cross-component tests, builds the CLI, and builds the Astro site.
 
 The Dev Container installs Devbox over the Debian base image. The root
 `devbox.json` pins Node.js 22 and pnpm 10.33.4; npm is provided with Node.js.
 VS Code terminals activate the Devbox environment automatically. The
-post-create lifecycle runs `make post-create`, which installs all four package
-trees and starts the Astro development server on the forwarded port 4321.
+post-create lifecycle runs `make post-create`, which installs the root tooling
+and all four application package trees, then starts the Astro development
+server on the forwarded port 4321.
 Container restarts run the idempotent `make dev-start` target.
 
 The Astro build generates the ecosystem sitemap, crawler policy, and agent
-index. The docs Worker deployment compiles equivalent deterministic renderers
+index. The docs router deployment compiles equivalent deterministic renderers
 and its documentation registry. These are deployment artifacts rather than
 separately maintained public files.
 
-Changes under `worker/` deploy automatically from `main` through
-`.github/workflows/deploy-worker.yml`. A successful `Deploy Worker` run
+Changes under `apps/router/` deploy automatically from `main` through
+`.github/workflows/deploy-router.yml`. A successful `Deploy Router` run
 triggers the live vanity-import checks. The same checks also run weekly.
 
-The Pages project is described by `site/wrangler.toml`. The documentation
-Worker is described by `docs-worker/wrangler.toml`; this repository does not
-currently contain an automatic deployment workflow for it.
+The Pages project is described by `apps/site/wrangler.toml`; Cloudflare must use
+`apps/site` as its build root. The documentation router is described by
+`apps/docs-router/wrangler.toml`; this repository does not currently contain an
+automatic deployment workflow for it.
+The docs router retains the deployed Worker name `hop-top-docs-worker` so this
+source-layout refactor does not replace the existing Cloudflare service.
 
 ## Key design decisions
 
 - **Query-based namespace sharing:** `go-get=1` lets the same package URL serve
   Go tooling and a human-facing landing page.
-- **Convention with override:** repository resolution defaults to the
-  organization naming convention while Homebrew metadata handles exceptions.
+- **Canonical Go mirrors:** vanity metadata always targets the matching
+  repository in the `hop-top` organization.
 - **Dedicated spec host:** canonical specifications cannot collide with Go
   package names.
 - **Host-owned discovery:** each public hostname advertises a sitemap that

@@ -9,7 +9,7 @@ const documentedProjects = [
 
 describe('data sync baseline', () => {
   // Documents the current project set so drift between registries
-  // (site/src/data/projects.ts vs docs-worker/src/projects.ts)
+  // (apps/site/src/data/projects.ts vs apps/docs-router/src/projects.ts)
   // is caught by a snapshot diff.
 
   it('project names snapshot', () => {
@@ -71,20 +71,20 @@ describe('data sync baseline', () => {
     `);
   });
 
-  it('includes every docs-worker project in the site registry', () => {
-    // Known projects that exist in docs-worker (P3) registry.
-    // Update this list when docs-worker/src/projects.ts changes.
+  it('includes every docs-router project in the site registry', () => {
+    // Known projects that exist in the docs-router registry.
+    // Update this list when apps/docs-router/src/projects.ts changes.
     const siteNames = new Set(projects.map((p) => p.name));
     const missingFromSite = documentedProjects.filter(
       (n) => !siteNames.has(n),
     );
     expect(
       missingFromSite,
-      'docs-worker projects missing from site registry',
+      'docs-router projects missing from site registry',
     ).toEqual([]);
   });
 
-  it('documents the docs-worker subset at its canonical hub URLs', () => {
+  it('documents the docs-router subset at its canonical hub URLs', () => {
     for (const name of documentedProjects) {
       const project = projects.find((candidate) => candidate.name === name);
       expect(project?.docs).toBe(`https://docs.hop.top/${name}/`);

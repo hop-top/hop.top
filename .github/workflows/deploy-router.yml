@@ -1,11 +1,11 @@
-name: Deploy Worker
+name: Deploy Router
 
 on:
   push:
     branches: [main]
     paths:
-      - 'worker/**'
-      - '.github/workflows/deploy-worker.yml'
+      - 'apps/router/**'
+      - '.github/workflows/deploy-router.yml'
   workflow_dispatch:
 
 permissions:
@@ -21,12 +21,12 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Install worker deps
-        working-directory: worker
+      - name: Install router dependencies
+        working-directory: apps/router
         run: npm ci
 
       - name: Deploy
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          workingDirectory: worker
+          workingDirectory: apps/router
