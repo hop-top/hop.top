@@ -121,18 +121,6 @@ describe('go vanity routes', () => {
     expect(html).toContain('hop.top/c12n git https://github.com/hop-top/c12n')
   })
 
-  it('still uses homebrew homepage for the human redirect', async () => {
-    fetchMock.get(TAP).intercept({ path: tapPath('c12n') }).reply(
-      200,
-      'class C12n < Formula\n  homepage "https://github.com/hop-top/poly-c12n"\nend\n',
-    )
-    const res = await request('/c12n')
-    expect(res.status).toBe(302)
-    expect(res.headers.get('location')).toBe(
-      'https://github.com/hop-top/poly-c12n',
-    )
-  })
-
   it('returns 404 for unknown x-number pattern (no homebrew fetch)', async () => {
     const res = await request('/x999?go-get=1')
     expect(res.status).toBe(404)
@@ -145,13 +133,15 @@ describe('go vanity routes', () => {
     expect(html).toContain('hop.top/x402 git https://github.com/hop-top/x402')
   })
 
-  it('redirects single-segment without ?go-get=1', async () => {
-    fetchMock.get(TAP).intercept({ path: tapPath('some-repo') }).reply(404, '')
-    const res = await request('/some-repo')
-    expect(res.status).toBe(302)
-    expect(res.headers.get('location')).toBe(
-      'https://github.com/hop-top/some-repo',
+  it('proxies single-segment pages to the marketing site', async () => {
+    const siteHost = new URL(env.SITE_URL).origin
+    fetchMock.get(siteHost).intercept({ path: '/some-repo' }).reply(
+      200,
+      'package landing page',
     )
+    const res = await request('/some-repo')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('package landing page')
   })
 
   it('does not return vanity for multi-segment paths', async () => {

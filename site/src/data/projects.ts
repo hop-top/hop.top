@@ -4,6 +4,7 @@ export interface Project {
   description: string;
   category: Category;
   install?: string;
+  docs?: string;
 }
 
 export type Category =
@@ -30,6 +31,7 @@ export const projects: Project[] = [
     description: 'Shared Go utilities and foundational primitives.',
     category: 'core',
     install: 'go get hop.top/kit',
+    docs: 'https://docs.hop.top/kit/',
   },
   {
     name: 'cite',
@@ -37,6 +39,7 @@ export const projects: Project[] = [
     description: 'Polyglot toolkit for custom URI schemes and OS handler registration.',
     category: 'core',
     install: 'go get hop.top/cite',
+    docs: 'https://docs.hop.top/cite/',
   },
   {
     name: 'mdl',
@@ -51,6 +54,7 @@ export const projects: Project[] = [
     description: 'Task lifecycle manager — tracks, plans, and flows.',
     category: 'cli',
     install: 'go install hop.top/tlc@latest',
+    docs: 'https://docs.hop.top/tlc/',
   },
   {
     name: 'aps',
@@ -58,6 +62,7 @@ export const projects: Project[] = [
     description: 'Agent profile store and workspace manager.',
     category: 'cli',
     install: 'go install hop.top/aps@latest',
+    docs: 'https://docs.hop.top/aps/',
   },
   {
     name: 'wsm',
@@ -65,6 +70,7 @@ export const projects: Project[] = [
     description: 'Workspace and squad management.',
     category: 'cli',
     install: 'go install hop.top/wsm@latest',
+    docs: 'https://docs.hop.top/wsm/',
   },
   {
     name: 'rsx',
@@ -72,12 +78,14 @@ export const projects: Project[] = [
     description: 'Repository signal extractor for dependency vetting.',
     category: 'cli',
     install: 'go install hop.top/rsx@latest',
+    docs: 'https://docs.hop.top/rsx/',
   },
   {
     name: 'ibr',
     repo: 'https://github.com/hop-top/ibr',
     description: 'Intent-driven headless browser automation.',
     category: 'cli',
+    docs: 'https://docs.hop.top/ibr/',
   },
   {
     name: 'ben',
@@ -120,6 +128,7 @@ export const projects: Project[] = [
     repo: 'https://github.com/hop-top/gym',
     description: 'Skill package manager for agent workflows.',
     category: 'cli',
+    docs: 'https://docs.hop.top/gym/',
   },
   {
     name: 'tab',
@@ -173,6 +182,7 @@ export const projects: Project[] = [
     description: 'Cross-runtime router for Go.',
     category: 'cross-runtime',
     install: 'go get hop.top/xrr',
+    docs: 'https://docs.hop.top/xrr/',
   },
   {
     name: 'xrr-ts',
@@ -180,6 +190,7 @@ export const projects: Project[] = [
     description: 'Cross-runtime router for TypeScript.',
     category: 'cross-runtime',
     install: 'npm install @hop-top/xrr',
+    docs: 'https://docs.hop.top/xrr-ts/',
   },
   {
     name: 'xrr-rs',
@@ -187,6 +198,7 @@ export const projects: Project[] = [
     description: 'Cross-runtime router for Rust.',
     category: 'cross-runtime',
     install: 'cargo add xrr',
+    docs: 'https://docs.hop.top/xrr-rs/',
   },
   {
     name: 'xrr-php',
@@ -194,6 +206,7 @@ export const projects: Project[] = [
     description: 'Cross-runtime router for PHP.',
     category: 'cross-runtime',
     install: 'composer require hop-top/xrr',
+    docs: 'https://docs.hop.top/xrr-php/',
   },
   {
     name: 'xrr-py',
@@ -201,6 +214,7 @@ export const projects: Project[] = [
     description: 'Cross-runtime router for Python.',
     category: 'cross-runtime',
     install: 'pip install xrr',
+    docs: 'https://docs.hop.top/xrr-py/',
   },
   {
     name: 'xrr-poly',
@@ -225,6 +239,7 @@ export const projects: Project[] = [
     repo: 'https://github.com/hop-top/eva',
     description: 'Evaluation framework for agent quality.',
     category: 'ai',
+    docs: 'https://docs.hop.top/eva/',
   },
   {
     name: 'eva-pkg',

@@ -21,6 +21,31 @@ describe('route: GET /', () => {
   })
 })
 
+describe('discovery routes', () => {
+  it.each([
+    ['/robots.txt', 'text/plain'],
+    ['/llms.txt', 'text/plain'],
+    ['/sitemap.xml', 'application/xml'],
+  ])('serves %s with %s', async (path, contentType) => {
+    const res = await app.request(path)
+
+    expect(res.status).toBe(200)
+    expect(res.headers.get('content-type')).toContain(contentType)
+  })
+
+  it('links discovery files from the documentation landing page', async () => {
+    const res = await app.request('/')
+    const body = await res.text()
+
+    expect(body).toContain(
+      '<link rel="sitemap" href="https://docs.hop.top/sitemap.xml">',
+    )
+    expect(body).toContain(
+      '<link rel="describedby" href="https://docs.hop.top/llms.txt">',
+    )
+  })
+})
+
 describe('route: GET /:pkg/', () => {
   it('returns error page for unknown package', async () => {
     const res = await app.request('/nonexistent-pkg-xyz/')

@@ -20,11 +20,15 @@ jobs:
         with:
           node-version: "22"
 
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10.33.4
+
       - name: Install dependencies
         run: |
           npm ci
           cd worker && npm ci && cd ..
-          cd docs-worker && npm ci && cd ..
+          pnpm --dir docs-worker install --frozen-lockfile
           cd site && npm ci && cd ..
 
       - name: Lint
@@ -37,7 +41,7 @@ jobs:
         run: cd worker && npx vitest run
 
       - name: Test (docs-worker)
-        run: cd docs-worker && npx vitest run
+        run: pnpm --dir docs-worker test
 
       - name: Test (site)
         run: cd site && npx vitest run

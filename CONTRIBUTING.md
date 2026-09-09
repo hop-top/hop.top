@@ -8,7 +8,7 @@ Thanks for your interest in contributing!
 2. Clone your fork locally
 3. Create a feature branch: `git checkout -b feat/my-change`
 4. Make your changes
-5. Run tests: `task test`
+5. Run checks: `make check`
 6. Commit using
    [Conventional Commits](https://conventionalcommits.org)
 7. Push and open a Pull Request
@@ -16,16 +16,17 @@ Thanks for your interest in contributing!
 ## Development Setup
 
 ```sh
-task setup
+make install
 ```
 
-This installs dependencies and configures the local
-environment.
+This installs dependencies for the root package, both Workers, and the site.
+Run `devbox shell` first when using the repository's pinned toolchain outside
+the Dev Container.
 
 ## Code Style
 
 - Follow existing conventions in the codebase
-- Run linters before submitting: `task lint`
+- Run linters before submitting: `make lint`
 - Keep changes focused; one concern per PR
 
 ## Commit Messages

@@ -42,6 +42,8 @@ export function landingPage(): string {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>hop.top docs</title>
+  <link rel="sitemap" href="https://docs.hop.top/sitemap.xml">
+  <link rel="describedby" href="https://docs.hop.top/llms.txt">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -201,6 +203,8 @@ export function landingPage(): string {
       <a href="https://hop.top">hop.top</a>
        &middot;
       <a href="https://github.com/hop-top">github</a>
+       &middot;
+      <a href="https://docs.hop.top/llms.txt">llms.txt</a>
     </footer>
   </div>
 

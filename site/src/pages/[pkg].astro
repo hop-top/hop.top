@@ -73,7 +73,7 @@ const cat = categories[project.category];
           Source on GitHub
         </a>
         <a
-          href={`https://pkg.go.dev/hop.top/${project.name}`}
+          href={project.docs ?? `https://pkg.go.dev/hop.top/${project.name}`}
           class="pkg-link"
         >
           Docs

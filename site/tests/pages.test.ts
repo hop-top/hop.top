@@ -1,7 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { projects } from '../src/data/projects';
 
-const RESERVED_PATHS = ['index', '404', 'favicon.ico', 'favicon.svg'];
+const RESERVED_PATHS = [
+  'index',
+  '404',
+  'favicon.ico',
+  'favicon.svg',
+  'llms.txt',
+  'robots.txt',
+  'sitemap-index.xml',
+];
 
 describe('static page generation', () => {
   it('generates a path for each project', () => {

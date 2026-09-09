@@ -1,14 +1,13 @@
 {
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/main/.schema/devbox.schema.json",
   "packages": [
-    "go@latest",
-    "nodejs@latest",
-    "python3@latest",
-    "go-task@latest"
+    "nodejs@22",
+    "pnpm@10.33.4",
+    "tmux@latest"
   ],
   "shell": {
     "init_hook": [
-      "echo 'devbox shell ready'"
+      "echo 'hop.top devbox ready — run make check to verify the workspace'"
     ]
   }
 }

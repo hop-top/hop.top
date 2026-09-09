@@ -23,6 +23,14 @@ describe('projects registry', () => {
     expect(slugs.length).toBe(unique.size)
   })
 
+  it('no slug shadows a discovery route', () => {
+    const reserved = ['robots.txt', 'sitemap.xml', 'llms.txt']
+
+    for (const project of PROJECTS) {
+      expect(reserved).not.toContain(project.slug)
+    }
+  })
+
   it('docsHost format is valid (subdomain of hop.top)', () => {
     for (const p of PROJECTS) {
       expect(p.docsHost).toMatch(/^[a-z0-9-]+\.hop\.top$/)

@@ -1,21 +1,5 @@
 import { describe, it, expect } from "vitest";
-
-// TODO: duplicated from worker/src/index.ts goVanity — tests validate this
-// copy, not the real function. Import from source once it's exported as a
-// shared module (see P1 worker). Until then, keep in sync manually.
-function goVanity(importPath: string, repoUrl: string): string {
-  return `<!DOCTYPE html>
-<html>
-<head>
-<meta name="go-import" content="${importPath} git ${repoUrl}">
-<meta name="go-source" content="${importPath} ${repoUrl} ${repoUrl}/tree/main{/dir} ${repoUrl}/blob/main{/dir}/{file}#L{line}">
-<meta http-equiv="refresh" content="3; url=${repoUrl}">
-</head>
-<body>
-Redirecting to <a href="${repoUrl}">${repoUrl}</a>...
-</body>
-</html>`;
-}
+import { goVanity } from "../worker/src/index.js";
 
 describe("goVanity", () => {
   it("generates correct go-import meta tag", () => {
@@ -99,14 +83,15 @@ describe("goVanity", () => {
     expect(html).toContain("</a>");
   });
 
-  it("handles special characters in package name safely", () => {
+  it("escapes special characters in package and repository values", () => {
     const html = goVanity(
       'hop.top/<script>alert("xss")</script>',
-      "https://github.com/hop-top/evil",
+      'https://github.com/hop-top/evil" onclick="alert(1)',
     );
-    // raw injection lands in content attr — verify structure intact
-    expect(html).toContain("<!DOCTYPE html>");
-    expect(html).toContain("</html>");
+    expect(html).not.toContain("<script>");
+    expect(html).not.toContain('onclick="alert(1)');
+    expect(html).toContain("&lt;script&gt;");
+    expect(html).toContain("&quot; onclick=&quot;alert(1)");
   });
 
   it("handles empty string inputs without crashing", () => {

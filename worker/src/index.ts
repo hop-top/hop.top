@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import { html } from 'hono/html'
 
 type Bindings = {
   SITE_URL: string
@@ -21,7 +22,7 @@ function safeHeaders(raw: Headers): Headers {
   return out
 }
 
-export const goVanity = (importPath: string, repoUrl: string) => `<!DOCTYPE html>
+export const goVanity = (importPath: string, repoUrl: string) => String(html`<!DOCTYPE html>
 <html>
 <head>
 <meta name="go-import" content="${importPath} git ${repoUrl}">
@@ -31,7 +32,7 @@ export const goVanity = (importPath: string, repoUrl: string) => `<!DOCTYPE html
 <body>
 Redirecting to <a href="${repoUrl}">${repoUrl}</a>...
 </body>
-</html>`
+</html>`)
 
 // Resolve a vanity pkg name to a GitHub URL.
 // 1. Try the Homebrew formula in hop-top/homebrew-tap (cached at Cloudflare edge).
@@ -138,8 +139,9 @@ app.use('/:name/:version/:file{.+}', async (c, next) => {
   return new Response(body, { status: 200, headers })
 })
 
-// Single-segment paths: go-vanity OR redirect to the resolved GitHub URL.
-app.all('/:pkg', async (c) => {
+// Single-segment paths serve Go metadata only when requested by Go tooling.
+// Browser requests continue to the Pages-backed landing site.
+app.all('/:pkg', async (c, next) => {
   const pkg = c.req.param('pkg')
   const goGet = c.req.query('go-get') === '1'
 
@@ -151,12 +153,10 @@ app.all('/:pkg', async (c) => {
 
   // Go modules always live on the hop-top/<pkg> mirror. The Homebrew
   // homepage may point elsewhere (e.g. a polyglot monolith whose tags the
-  // Go toolchain cannot resolve), so it is only used for the human
-  // browser redirect below — never for go-get resolution.
-  if (goGet) {
-    return c.html(goVanity(`hop.top/${pkg}`, `https://github.com/hop-top/${pkg}`))
-  }
-  return c.redirect(await resolveRepoUrl(pkg))
+  // Go toolchain cannot resolve), so never use it for go-get resolution.
+  if (!goGet) return next()
+
+  return c.html(goVanity(`hop.top/${pkg}`, `https://github.com/hop-top/${pkg}`))
 })
 
 // Fallthrough: proxy everything else to the main site.

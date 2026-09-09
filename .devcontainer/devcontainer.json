@@ -2,22 +2,29 @@
   "name": "hop.top",
   "build": {
     "dockerfile": "Dockerfile",
-    "context": "."
+    "context": ".."
+  },
+  "forwardPorts": [4321],
+  "portsAttributes": {
+    "4321": {
+      "label": "hop.top site",
+      "onAutoForward": "openPreview"
+    }
   },
   "customizations": {
     "vscode": {
+      "settings": {
+        "devbox.autoShellOnTerminal": true
+      },
       "extensions": [
-        "golang.go",
+        "jetpack-io.devbox",
         "dbaeumer.vscode-eslint",
-        "ms-python.python",
-        "ms-python.mypy-type-checker",
-        "charliermarsh.ruff",
         "tamasfe.even-better-toml",
-        "redhat.vscode-yaml",
-        "task.vscode-task"
+        "redhat.vscode-yaml"
       ]
     }
   },
-  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "postCreateCommand": "devbox run -- make post-create",
+  "postStartCommand": "devbox run -- make dev-start",
   "remoteUser": "vscode"
 }

@@ -19,3 +19,5 @@ build/
 *.tsbuildinfo
 coverage/
 .npm
+.pnpm-store/
+.devbox/
