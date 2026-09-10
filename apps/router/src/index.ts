@@ -148,14 +148,16 @@ app.all('/:pkg', async (c, next) => {
   // Reserve x[number] as a free namespace for future x402-style protocols.
   if (/^x\d+$/.test(pkg) && pkg !== 'x402') return c.notFound()
 
+  // Browser requests, including spec repository landing pages, belong to the
+  // marketing site. Namespace exclusions apply only to Go tooling.
+  if (!goGet) return next()
+
   // Specs are not Go packages — exclude from vanity-import resolution.
   if (isSpecName(pkg)) return c.notFound()
 
   // Go modules always live on the hop-top/<pkg> mirror. The Homebrew
   // homepage may point elsewhere (e.g. a polyglot monolith whose tags the
   // Go toolchain cannot resolve), so never use it for go-get resolution.
-  if (!goGet) return next()
-
   return c.html(goVanity(`hop.top/${pkg}`, `https://github.com/hop-top/${pkg}`))
 })
 

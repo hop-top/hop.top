@@ -31,7 +31,7 @@ describe("development container", () => {
 
   it("pins the JavaScript toolchain", () => {
     expect(devbox.packages).toContain("nodejs@22");
-    expect(devbox.packages).toContain("pnpm@10.33.4");
+    expect(devbox.packages).not.toContain("pnpm@10.33.4");
     expect(dockerfile).toContain("ARG DEVBOX_VERSION=0.18.0");
     expect(dockerfile).toContain("ENV DEVBOX_USE_VERSION=${DEVBOX_VERSION}");
     expect(dockerfile).toContain("chmod 0755 /usr/local/bin/devbox");
@@ -50,9 +50,7 @@ describe("development container", () => {
     expect(makefile).toContain("npm ci");
     expect(makefile).toContain("npm --prefix apps/cli ci");
     expect(makefile).toContain("npm --prefix apps/router ci");
-    expect(makefile).toContain(
-      "pnpm --dir apps/docs-router install --frozen-lockfile",
-    );
+    expect(makefile).toContain("npm --prefix apps/docs-router ci");
     expect(makefile).toContain("npm --prefix apps/site ci");
     expect(makefile).toMatch(/^dev-start:$/m);
     expect(makefile).toContain('tmux new-session -d -s "$(SITE_SESSION)"');

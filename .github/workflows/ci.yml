@@ -20,16 +20,12 @@ jobs:
         with:
           node-version: "22"
 
-      - uses: pnpm/action-setup@v6
-        with:
-          version: 10.33.4
-
       - name: Install dependencies
         run: |
           npm ci
           npm --prefix apps/cli ci
           npm --prefix apps/router ci
-          pnpm --dir apps/docs-router install --frozen-lockfile
+          npm --prefix apps/docs-router ci
           npm --prefix apps/site ci
 
       - name: Lint
@@ -42,7 +38,7 @@ jobs:
         run: npm --prefix apps/router test
 
       - name: Test (docs-router)
-        run: pnpm --dir apps/docs-router test
+        run: npm --prefix apps/docs-router test
 
       - name: Test (site)
         run: npm --prefix apps/site test

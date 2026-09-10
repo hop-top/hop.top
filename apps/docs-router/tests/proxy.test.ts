@@ -24,9 +24,9 @@ describe('navHeader', () => {
     expect(html).toContain('href="/kit/"')
   })
 
-  it('shows slug-based host label', () => {
+  it('shows the canonical docs URL', () => {
     const html = navHeader('kit', 'kit')
-    expect(html).toContain('kit.hop.top')
+    expect(html).toContain('docs.hop.top/kit')
   })
 
   it('uses sticky positioning', () => {
@@ -37,7 +37,7 @@ describe('navHeader', () => {
   it('escapes different slugs correctly', () => {
     const html = navHeader('xrr-ts', 'xrr-ts')
     expect(html).toContain('href="/xrr-ts/"')
-    expect(html).toContain('xrr-ts.hop.top')
+    expect(html).toContain('docs.hop.top/xrr-ts')
   })
 })
 

@@ -3,5 +3,5 @@ main = "src/index.ts"
 compatibility_date = "2024-03-09"
 
 routes = [
-	{ pattern = "docs.hop.top/*", zone_name = "hop.top" }
+	{ pattern = "docs.hop.top", custom_domain = true }
 ]

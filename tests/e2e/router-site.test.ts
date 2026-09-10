@@ -23,6 +23,18 @@ describe('router-site handoff', () => {
     expect(wrangler).toMatch(/SITE_URL/);
   });
 
+  it('owns spec.hop.top as a custom domain', () => {
+    const wrangler = readFileSync(
+      resolve(ROOT, 'apps/router/wrangler.toml'),
+      'utf8',
+    );
+
+    expect(wrangler).toContain(
+      '{ pattern = "spec.hop.top", custom_domain = true }',
+    );
+    expect(wrangler).not.toContain('spec.hop.top/*');
+  });
+
   it('site public assets include favicon.svg', () => {
     expect(
       existsSync(resolve(ROOT, 'apps/site/public/favicon.svg')),

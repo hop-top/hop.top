@@ -18,7 +18,7 @@ function projectCard(p: Project): string {
   return `<a href="/${p.slug}/" class="card">
   <div class="card-head">
     <span class="card-name">${p.name}</span>
-    <span class="card-host">${p.docsHost}</span>
+    <span class="card-host">docs.hop.top/${p.slug}</span>
   </div>
   <p class="card-desc">${p.description}</p>
 </a>`

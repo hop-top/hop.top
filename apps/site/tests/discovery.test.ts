@@ -38,6 +38,10 @@ describe('crawler discovery artifacts', () => {
         `- [${project.name} documentation](${project.docs}): ${project.description}`,
       );
     }
+
+    expect(output).toContain(
+      '- [spec-crtx specification](https://spec.hop.top/crtx/v0.1/envelope.md): Language-agnostic specification for AI agent conversations',
+    );
   });
 
   it('orders project links deterministically', () => {

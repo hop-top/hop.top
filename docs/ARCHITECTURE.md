@@ -13,7 +13,7 @@ flowchart LR
   router -->|Go vanity lookup| tap[hop-top/homebrew-tap]
   router -->|specification request| raw[GitHub raw content]
   client -->|docs.hop.top| docs[Docs router]
-  docs -->|project documentation| project[project.hop.top]
+  docs -->|published project documentation| project[slug.hop.top origin]
 ```
 
 The repository contains four independently configured Node projects:
@@ -109,15 +109,18 @@ Each public host owns a complete discovery set:
 | `docs.hop.top` | `sitemap.xml` | `robots.txt` | `llms.txt` |
 
 The `hop.top` sitemap enumerates every statically generated ecosystem page.
-Its `llms.txt` lists all projects and includes a documentation section for
-documentation-enabled projects. The main navigation provides an
-ordinary crawlable link to the documentation hub.
+Its `llms.txt` lists all projects, includes a documentation section for
+documentation-enabled projects, and links specifications to their canonical
+versioned files under `spec.hop.top`. The main navigation provides an ordinary
+crawlable link to the documentation hub.
 
-The docs sitemap enumerates the documentation hub and every registered project
-root under `docs.hop.top/<package>/`. Its `llms.txt` provides the same project
-documentation links with descriptions and source repositories. The docs
-landing page advertises both files in its HTML head, and its `robots.txt`
-advertises the sitemap.
+The docs sitemap enumerates the documentation hub and every verified published
+project root under `docs.hop.top/<package>/`. Its `llms.txt` provides the same
+project documentation links with descriptions and source repositories. Route
+readiness alone does not qualify a project for discovery: an unpublished origin
+is omitted from the docs landing page, both agent indexes, and the docs
+sitemap. The docs landing page advertises both discovery files in its HTML
+head, and its `robots.txt` advertises the sitemap.
 
 The two sitemaps remain separate by design. The Sitemap protocol expects one
 host per sitemap and requires sitemap indexes to reference sitemaps on the same
@@ -148,18 +151,24 @@ page—not from the deployment time or repository HEAD.
 
 ## Documentation hub
 
-`apps/docs-router/` is a separate Hono Worker bound to `docs.hop.top/*`.
+`apps/docs-router/` is a separate Hono Worker whose Cloudflare custom domain is
+`docs.hop.top`.
 
 - `/` renders a registry-driven documentation index.
 - `/sitemap.xml` lists the hub and registered documentation roots.
 - `/robots.txt` allows crawling and advertises that sitemap.
 - `/llms.txt` provides a registry-driven agent index.
-- `/<package>/...` proxies to the configured `<package>.hop.top` host.
+- `/<package>/...` proxies every marketing-catalog slug to the conventional
+  `<package>.hop.top` origin. Publishing that origin activates the canonical
+  route without a docs-router deployment. A verified project can override the
+  internal origin while its public URL remains `docs.hop.top/<package>`; APS
+  uses its public production Pages origin so the proxy does not cross the
+  Access-protected `aps.hop.top` hostname.
 - HTML responses receive a shared navigation header.
 - Root-relative links, scripts, images, redirects, and asset requests are
   rewritten to retain the `/<package>` prefix.
-- Unknown projects and unavailable upstream documentation receive a local
-  error page.
+- Slugs outside the marketing catalog return 404. Unavailable upstream
+  documentation receives a local error page.
 
 Only allowlisted request headers are forwarded. Request bodies are forwarded
 only for methods that permit them, and redirects remain under the
@@ -167,30 +176,43 @@ only for methods that permit them, and redirects remain under the
 
 ## Project registries
 
-Two registries currently serve different publishing surfaces:
+The checked-in project data has three roles:
 
-| Registry | Fields | Consumer |
+| Data | Fields | Consumer |
 |---|---|---|
-| `apps/site/src/data/projects.ts` | name, repository, description, category, optional install command and docs URL | Astro site |
-| `apps/docs-router/src/projects.ts` | name, slug, repository, description, docs host, category | Documentation router |
+| Marketing catalog in `apps/site/src/data/projects.ts` | name, repository, description, category, optional install command and verified docs URL | Astro site |
+| Routable slugs in `apps/docs-router/src/projects.ts` | slug | Documentation proxy |
+| Published docs registry in `apps/docs-router/src/projects.ts` | name, slug, repository, description, internal origin host, category | Docs proxy, landing page, sitemap, and agent indexes |
 
-The site contains the broader ecosystem. The documentation registry is the
-subset with a proxied documentation site. Tests validate each registry and
-guard the known subset relationship, but the files are maintained manually.
+The public site registry is an explicitly selected, independently curated
+subset of the ecosystem. Organization membership, repository visibility, and
+vanity homepages are not automatic inclusion signals. Displayed descriptions
+are copied verbatim from GitHub metadata or, when that field is empty, from the
+project's authored README; missing metadata is never replaced with invented
+copy.
+
+Every documentation-eligible marketing slug is accepted by the docs proxy. A
+`spec-*` repository is deliberately excluded because specifications use the
+separate `spec.hop.top/<name>/<version>/<file>` namespace. The published docs
+registry is a verified subset: it controls which documentation links are shown
+on the marketing site and which projects appear on the docs landing page,
+sitemap, and `llms.txt`. APS is currently the only verified published docs
+origin. Both files are maintained manually and guarded by tests until the
+GitHub-backed generator exists.
 
 ### GitHub-backed generation
 
 The registries can be generated from GitHub repository metadata. The robust
 design is build-time generation rather than runtime API calls:
 
-1. Select participating organization repositories by topic or an explicit
-   allowlist.
+1. Select participating organization repositories through an explicit opt-in
+   custom property that represents the curated catalog decision.
 2. Read repository name, description, URL, homepage, topics, and optional
    organization custom properties through the GitHub API.
 3. Merge explicit overrides for presentation category, install command,
    vanity alias, and documentation host—fields that cannot always be inferred.
-4. Validate uniqueness, URL schemes, category values, and documentation
-   subset membership.
+4. Validate visibility and publication intent, active status, canonical source
+   ownership, uniqueness, URL schemes, and category values.
 5. Write one canonical, checked-in registry consumed by both builds.
 6. Run the generator in check mode in CI so metadata drift produces a reviewable
    pull request instead of changing production at request time.
@@ -222,7 +244,7 @@ application under `apps/`. It then runs the root linter and all test suites,
 performs the cross-component tests, builds the CLI, and builds the Astro site.
 
 The Dev Container installs Devbox over the Debian base image. The root
-`devbox.json` pins Node.js 22 and pnpm 10.33.4; npm is provided with Node.js.
+`devbox.json` pins Node.js 22; npm is provided with Node.js.
 VS Code terminals activate the Devbox environment automatically. The
 post-create lifecycle runs `make post-create`, which installs the root tooling
 and all four application package trees, then starts the Astro development
@@ -240,10 +262,10 @@ triggers the live vanity-import checks. The same checks also run weekly.
 
 The Pages project is described by `apps/site/wrangler.toml`; Cloudflare must use
 `apps/site` as its build root. The documentation router is described by
-`apps/docs-router/wrangler.toml`; this repository does not currently contain an
-automatic deployment workflow for it.
-The docs router retains the deployed Worker name `hop-top-docs-worker` so this
-source-layout refactor does not replace the existing Cloudflare service.
+`apps/docs-router/wrangler.toml`; deploying it creates or updates the
+`hop-top-docs-worker` service and manages `docs.hop.top` as a Worker custom
+domain. This repository does not currently contain an automatic deployment
+workflow for it.
 
 ## Key design decisions
 
@@ -254,8 +276,11 @@ source-layout refactor does not replace the existing Cloudflare service.
 - **Dedicated spec host:** canonical specifications cannot collide with Go
   package names.
 - **Host-owned discovery:** each public hostname advertises a sitemap that
-  contains only URLs for that hostname, while HTML and agent indexes provide
-  cross-host discovery.
+  contains only verified URLs for that hostname, while HTML and agent indexes
+  provide cross-host discovery.
+- **Route readiness is not publication:** every docs-eligible catalog slug has
+  a conventional docs route, but discovery surfaces list it only after its
+  origin is verified. Specifications remain under `spec.hop.top`.
 - **Build-time project catalog:** project metadata is available without a
   production GitHub API dependency.
 - **Header allowlists:** proxies forward known-safe request metadata instead

@@ -13,13 +13,13 @@ check: lint test build links
 
 build:
 	npm --prefix apps/cli run build
-	pnpm --dir apps/docs-router typecheck
+	npm --prefix apps/docs-router run typecheck
 	npm --prefix apps/site run build
 
 test:
 	npm test
 	npm --prefix apps/router test
-	pnpm --dir apps/docs-router test
+	npm --prefix apps/docs-router test
 	npm --prefix apps/site test
 	npm run test:e2e
 
@@ -28,7 +28,11 @@ lint:
 
 links:
 	@if command -v lychee >/dev/null 2>&1; then \
-		lychee --no-progress .; \
+		lychee --no-progress \
+			README.md CONTRIBUTING.md SECURITY.md CHANGELOG.md \
+			docs && \
+		lychee --no-progress --offline \
+			--root-dir "$(CURDIR)/apps/site/dist" apps/site/dist; \
 	else \
 		echo "lychee not installed; skipping link check"; \
 	fi
@@ -37,7 +41,7 @@ install:
 	npm ci
 	npm --prefix apps/cli ci
 	npm --prefix apps/router ci
-	pnpm --dir apps/docs-router install --frozen-lockfile
+	npm --prefix apps/docs-router ci
 	npm --prefix apps/site ci
 
 setup: install

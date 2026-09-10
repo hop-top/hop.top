@@ -163,6 +163,19 @@ describe('go vanity routes', () => {
     expect(res.status).toBe(404)
   })
 
+  it('proxies spec-* browser pages to the marketing site', async () => {
+    const siteHost = new URL(env.SITE_URL).origin
+    fetchMock.get(siteHost).intercept({ path: '/spec-crtx' }).reply(
+      200,
+      'spec landing page',
+    )
+
+    const res = await request('/spec-crtx')
+
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('spec landing page')
+  })
+
   it('returns 404 for the bare "spec" name', async () => {
     const res = await request('/spec?go-get=1')
     expect(res.status).toBe(404)

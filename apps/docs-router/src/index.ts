@@ -1,5 +1,5 @@
-import { Hono } from 'hono'
-import { PROJECTS } from './projects'
+import { Hono, type Context } from 'hono'
+import { PROJECTS, ROUTABLE_SLUGS } from './projects'
 import { landingPage } from './landing'
 import { proxyDocs, proxyAsset } from './proxy'
 import {
@@ -10,7 +10,7 @@ import {
 
 const app = new Hono()
 
-const PROJECT_SLUGS = PROJECTS.map((p) => p.slug)
+const PROJECT_SLUGS: readonly string[] = ROUTABLE_SLUGS
 const DOCS_SITE = new URL('https://docs.hop.top')
 const ROBOTS_TXT = renderRobotsTxt(DOCS_SITE)
 const LLMS_TXT = renderLlmsTxt(DOCS_SITE, PROJECTS)
@@ -37,15 +37,19 @@ app.all(
   },
 )
 
-// Package docs proxy
-app.all('/:pkg/:path{.+}?', async (c) => {
+async function proxyProject(c: Context) {
   const pkg = c.req.param('pkg')
 
-  if (!PROJECT_SLUGS.includes(pkg)) {
+  if (!pkg || !PROJECT_SLUGS.includes(pkg)) {
     return c.notFound()
   }
 
   return proxyDocs(c, pkg)
-})
+}
+
+// Package docs proxy. Hono treats a trailing slash as a separate route, so
+// register both the project root and every nested project path explicitly.
+app.all('/:pkg', proxyProject)
+app.all('/:pkg/*', proxyProject)
 
 export default app

@@ -1,11 +1,29 @@
 import { describe, it, expect } from 'vitest';
 import { projects } from '../src/data/projects';
 
-const documentedProjects = [
-  'aps', 'cite', 'eva', 'gym', 'ibr', 'kit',
-  'rsx', 'tlc', 'wsm', 'xrr',
-  'xrr-php', 'xrr-py', 'xrr-rs', 'xrr-ts',
-];
+const githubCatalog = {
+  agr: 'AGR is a V*-native, temporal, event-sourced, multi-agent orchestration runtime.',
+  aps: 'Agent Profile System',
+  axon: 'Host-CLI contract for AI-assistant hooks: identity, event maps, envelope and decision shapes, per CLI',
+  ben: 'General-purpose benchmarking tool — answers "which approach is better, and by how much?" for any measurable task: tools, implementations, deps, LLM calls, agents.',
+  c12n: 'Classification engine — LLM request classification with signal-based routing',
+  cite: 'Polyglot toolkit for custom URI schemes (Go, TS, Python, Rust, PHP). Shared contract + parity-tested SDKs.',
+  cxr: 'Capability eXecution Router — domain-agnostic dispatch runtime',
+  eva: 'Distributed, extensible framework for testing, routing, and validating LLM-based agents.',
+  fit: 'Train small advisor models to steer black-box LLMs without fine-tuning.',
+  git: 'Deterministic, isolated, and reproducible multi-branch git worktree wrapper.',
+  ibr: 'Human instructions translated into X-Path capable of finding the intended data even after a page structure or location change.',
+  nerv: 'Write one hook. Run it on every AI coding CLI.',
+  pod: 'Session, model, and tooling layer on top of any remote compute.',
+  'spec-crtx': 'Language-agnostic specification for AI agent conversations',
+  stem: 'Polyglot AI agent runtime — Go reference runtime + envelope SDKs for TS, Py, Rs, PHP. Implements crtx v0.1 (pronounced \'cortex\').',
+  tip: 'Instantly transform any agent into a CLI token aware power user that never drifts.',
+  tlc: 'IDE-agnostic todo list with full syncing with any issue tracking tool for tasks created remotely.',
+  vein: 'Find any coding session across any AI assistant. One command.',
+  wsm: 'IDE-agnostic workspace session manager allowing to start in Claude and resume in Gemini.',
+  xat: 'Cross-Assistant Tester — cross-CLI conformance + regression harness for AI-assistant plugins (Claude Code, Gemini, Codex, OpenCode)',
+  xrr: 'Generic multi-channel interaction recorder/replayer with a pluggable adapter interface.',
+} as const;
 
 describe('data sync baseline', () => {
   // Documents the current project set so drift between registries
@@ -16,42 +34,37 @@ describe('data sync baseline', () => {
     const names = projects.map((p) => p.name).sort();
     expect(names).toMatchInlineSnapshot(`
       [
-        "aom",
+        "agr",
         "aps",
+        "axon",
         "ben",
+        "c12n",
         "cite",
         "cxr",
         "eva",
-        "eva-ee",
-        "eva-pkg",
+        "fit",
         "git",
-        "gym",
-        "hdox",
-        "hop",
         "ibr",
-        "kit",
-        "mde",
-        "mdl",
-        "orb",
-        "par",
-        "rlz",
-        "rsx",
-        "rux",
-        "stk",
-        "tab",
+        "nerv",
+        "pod",
+        "spec-crtx",
+        "stem",
         "tip",
         "tlc",
-        "upgrade",
+        "vein",
         "wsm",
-        "x402",
+        "xat",
         "xrr",
-        "xrr-php",
-        "xrr-poly",
-        "xrr-py",
-        "xrr-rs",
-        "xrr-ts",
       ]
     `);
+  });
+
+  it('uses only the conservative public GitHub catalog and its descriptions', () => {
+    expect(
+      Object.fromEntries(
+        projects.map((project) => [project.name, project.description]),
+      ),
+    ).toEqual(githubCatalog);
   });
 
   it('category distribution snapshot', () => {
@@ -62,32 +75,32 @@ describe('data sync baseline', () => {
     expect(dist).toMatchInlineSnapshot(`
       {
         "ai": 3,
-        "cli": 17,
-        "core": 3,
+        "cli": 9,
+        "core": 1,
         "cross-runtime": 6,
-        "infra": 3,
-        "sdk": 2,
+        "infra": 2,
       }
     `);
   });
 
-  it('includes every docs-router project in the site registry', () => {
-    // Known projects that exist in the docs-router registry.
-    // Update this list when apps/docs-router/src/projects.ts changes.
-    const siteNames = new Set(projects.map((p) => p.name));
-    const missingFromSite = documentedProjects.filter(
-      (n) => !siteNames.has(n),
-    );
-    expect(
-      missingFromSite,
-      'docs-router projects missing from site registry',
-    ).toEqual([]);
+  it('does not publish unsupported install commands', () => {
+    expect(projects.every((project) => project.install === undefined)).toBe(true);
   });
 
-  it('documents the docs-router subset at its canonical hub URLs', () => {
-    for (const name of documentedProjects) {
-      const project = projects.find((candidate) => candidate.name === name);
-      expect(project?.docs).toBe(`https://docs.hop.top/${name}/`);
-    }
+  it('links only verified published documentation', () => {
+    expect(
+      projects
+        .filter((project) => project.docs)
+        .map((project) => project.name),
+    ).toEqual(['aps']);
+  });
+
+  it('links spec-crtx to its canonical versioned specification', () => {
+    const project = projects.find((candidate) => candidate.name === 'spec-crtx');
+
+    expect(project).toMatchObject({
+      spec: 'https://spec.hop.top/crtx/v0.1/envelope.md',
+    });
+    expect(project?.docs).toBeUndefined();
   });
 });

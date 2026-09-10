@@ -39,17 +39,17 @@ describe('landing page', () => {
     }
   })
 
-  it('shows docsHost for each project', () => {
+  it('shows the canonical docs URL for each project', () => {
     for (const p of PROJECTS) {
-      expect(html).toContain(p.docsHost)
+      expect(html).toContain(`docs.hop.top/${p.slug}`)
     }
   })
 
-  it('renders category sections', () => {
-    expect(html).toContain('Core')
+  it('renders only category sections represented in the registry', () => {
     expect(html).toContain('Tooling')
-    expect(html).toContain('Runtime')
-    expect(html).toContain('Language SDKs')
+    expect(html).not.toContain('<h2>Core</h2>')
+    expect(html).not.toContain('<h2>Runtime</h2>')
+    expect(html).not.toContain('<h2>Language SDKs</h2>')
   })
 
   it('includes search/filter input', () => {

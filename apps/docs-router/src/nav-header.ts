@@ -30,6 +30,6 @@ export function navHeader(projectName: string, slug: string): string {
       text-decoration: none;
       margin-left: auto;
       font-size: 0.75rem;
-    ">${slug}.hop.top</a>
+    ">docs.hop.top/${slug}</a>
   </div>`
 }

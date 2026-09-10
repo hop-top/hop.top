@@ -2,7 +2,7 @@ import type { Project } from '../data/projects';
 
 type ProjectSummary = Pick<
   Project,
-  'name' | 'description' | 'install' | 'docs'
+  'name' | 'description' | 'install' | 'docs' | 'spec'
 >;
 
 function absoluteUrl(site: URL, path: string): string {
@@ -37,6 +37,13 @@ export function renderLlmsTxt(
       (project) =>
         `- [${project.name} documentation](${project.docs}): ${project.description}`,
     );
+  const specificationLinks = [...catalog]
+    .filter((project) => project.spec)
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map(
+      (project) =>
+        `- [${project.name} specification](${project.spec}): ${project.description}`,
+    );
 
   return [
     '# hop.top',
@@ -58,6 +65,10 @@ export function renderLlmsTxt(
     '## Documentation',
     '',
     ...documentationLinks,
+    '',
+    '## Specifications',
+    '',
+    ...specificationLinks,
     '',
     '## Optional',
     '',

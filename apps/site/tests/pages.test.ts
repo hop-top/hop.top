@@ -1,5 +1,11 @@
+import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import { projects } from '../src/data/projects';
+
+const projectPage = readFileSync(
+  new URL('../src/pages/[pkg].astro', import.meta.url),
+  'utf8',
+);
 
 const RESERVED_PATHS = [
   'index',
@@ -44,5 +50,11 @@ describe('static page generation', () => {
         `"${p.name}" is not URL-safe`,
       ).toMatch(urlSafe);
     }
+  });
+
+  it('renders no guessed documentation fallback', () => {
+    expect(projectPage).not.toContain('pkg.go.dev');
+    expect(projectPage).toContain('project.docs &&');
+    expect(projectPage).toContain('project.spec &&');
   });
 });

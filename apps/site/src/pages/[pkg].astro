@@ -72,12 +72,20 @@ const cat = categories[project.category];
           </svg>
           Source on GitHub
         </a>
-        <a
-          href={project.docs ?? `https://pkg.go.dev/hop.top/${project.name}`}
-          class="pkg-link"
-        >
-          Docs
-        </a>
+        {
+          project.docs && (
+            <a href={project.docs} class="pkg-link">
+              Docs
+            </a>
+          )
+        }
+        {
+          project.spec && (
+            <a href={project.spec} class="pkg-link">
+              Specification
+            </a>
+          )
+        }
       </div>
     </div>
   </main>

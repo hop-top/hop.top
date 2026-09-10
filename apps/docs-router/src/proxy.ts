@@ -1,9 +1,9 @@
 import type { Context } from 'hono'
-import { PROJECTS } from './projects'
+import { PROJECTS, ROUTABLE_SLUGS } from './projects'
 import { navHeader } from './nav-header'
 import { errorPage } from './error-page'
 
-const PROJECT_SLUGS = PROJECTS.map((p) => p.slug)
+const PROJECT_SLUGS: readonly string[] = ROUTABLE_SLUGS
 
 const SAFE_HEADERS = new Set([
   'accept',
@@ -33,12 +33,12 @@ function safeHeaders(raw: Headers): Headers {
  */
 export async function proxyDocs(c: Context, pkg: string) {
   const project = PROJECTS.find((p) => p.slug === pkg)
-  if (!project) {
-    return c.html(errorPage(pkg), 404)
-  }
+  const projectName = project?.name ?? pkg
+  const originHost = project?.originHost ?? `${pkg}.hop.top`
 
   const url = new URL(c.req.url)
-  url.hostname = project.docsHost
+  url.protocol = 'https:'
+  url.hostname = originHost
   // Strip leading /<pkg> prefix from path
   url.pathname = url.pathname.replace(new RegExp(`^/${pkg}`), '') || '/'
 
@@ -52,7 +52,11 @@ export async function proxyDocs(c: Context, pkg: string) {
       redirect: 'manual',
     })
 
-    if (response.status === 522 || response.status === 523) {
+    if (
+      response.status === 522 ||
+      response.status === 523 ||
+      response.status === 530
+    ) {
       return c.html(errorPage(pkg), 502)
     }
 
@@ -64,7 +68,7 @@ export async function proxyDocs(c: Context, pkg: string) {
     if (response.status >= 300 && response.status < 400) {
       const location = response.headers.get('location')
       if (location) {
-        const rewritten = rewriteLocation(location, project.docsHost, pkg)
+        const rewritten = rewriteLocation(location, originHost, pkg)
         const resHeaders = new Headers(response.headers)
         resHeaders.set('location', rewritten)
         return new Response(response.body, {
@@ -84,7 +88,7 @@ export async function proxyDocs(c: Context, pkg: string) {
     return new HTMLRewriter()
       .on('body', {
         element(el) {
-          el.prepend(navHeader(project.name, pkg), { html: true })
+          el.prepend(navHeader(projectName, pkg), { html: true })
         },
       })
       .on('link', {
@@ -138,11 +142,12 @@ export async function proxyAsset(c: Context) {
   })
   if (!slug) return null
 
-  const project = PROJECTS.find((p) => p.slug === slug)
-  if (!project) return null
+  const project = PROJECTS.find((candidate) => candidate.slug === slug)
+  const originHost = project?.originHost ?? `${slug}.hop.top`
 
   const url = new URL(c.req.url)
-  url.hostname = project.docsHost
+  url.protocol = 'https:'
+  url.hostname = originHost
 
   const headers = safeHeaders(c.req.raw.headers)
 
