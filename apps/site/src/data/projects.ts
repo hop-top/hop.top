@@ -29,6 +29,13 @@ export const categories: Record<Category, { label: string; color: string }> = {
 // metadata or from the repository's authored README when metadata is absent.
 export const projects: Project[] = [
   {
+    name: 'spec-12fc',
+    repo: 'https://github.com/hop-top/spec-12fc',
+    description: 'Build agent-first command line tools — the 12-Factor AI-CLI specification and conformance Action.',
+    category: 'core',
+    spec: 'https://spec.hop.top/12fc/v0.1/spec.md',
+  },
+  {
     name: 'spec-crtx',
     repo: 'https://github.com/hop-top/spec-crtx',
     description: 'Language-agnostic specification for AI agent conversations',
@@ -91,6 +98,36 @@ export const projects: Project[] = [
     category: 'cli',
   },
   {
+    name: 'gym',
+    repo: 'https://github.com/hop-top/gym',
+    description: 'Universal package manager for agentskills.io skills.',
+    category: 'cli',
+  },
+  {
+    name: 'rux',
+    repo: 'https://github.com/hop-top/rux',
+    description: 'Deterministic runtime for automating interactive terminal applications and AI CLI agents.',
+    category: 'cli',
+  },
+  {
+    name: 'vstar',
+    repo: 'https://github.com/hop-top/vstar',
+    description: 'vstar — calendar/vCard semantics library',
+    category: 'sdk',
+  },
+  {
+    name: 'x402',
+    repo: 'https://github.com/hop-top/x402',
+    description: 'Protocol-agnostic x402 payment module for agent-native Go applications.',
+    category: 'sdk',
+  },
+  {
+    name: 'aim',
+    repo: 'https://github.com/hop-top/poly-aim',
+    description: 'AI model registry CLI — query models.dev with 12-factor agent-safe contracts. Polyglot SDKs: Go, Python, TypeScript, Rust, PHP.',
+    category: 'cross-runtime',
+  },
+  {
     name: 'cite',
     repo: 'https://github.com/hop-top/poly-cite',
     description: 'Polyglot toolkit for custom URI schemes (Go, TS, Python, Rust, PHP). Shared contract + parity-tested SDKs.',
@@ -142,6 +179,12 @@ export const projects: Project[] = [
     name: 'eva',
     repo: 'https://github.com/hop-top/eva',
     description: 'Distributed, extensible framework for testing, routing, and validating LLM-based agents.',
+    category: 'ai',
+  },
+  {
+    name: 'evol',
+    repo: 'https://github.com/hop-top/evol',
+    description: 'Self-improvement loop for agent capabilities: evaluate, benchmark, replay',
     category: 'ai',
   },
   {
