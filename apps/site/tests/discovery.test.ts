@@ -26,6 +26,9 @@ describe('crawler discovery artifacts', () => {
     expect(output).toContain('\n## Projects\n');
     expect(output).toContain('\n## Documentation\n');
     expect(output).toContain('\n## Optional\n');
+    expect(output).toContain(
+      '- [Friends](https://hop.top/friends): Open source projects we use, build on, or work well with.',
+    );
 
     for (const project of projects) {
       expect(output).toContain(

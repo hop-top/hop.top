@@ -72,6 +72,7 @@ export function renderLlmsTxt(
     '',
     '## Optional',
     '',
+    `- [Friends](${absoluteUrl(site, 'friends')}): Open source projects we use, build on, or work well with.`,
     '- [Source organization](https://github.com/hop-top): Source repositories for the hop-top ecosystem.',
     `- [Gateway source](https://github.com/hop-top/hop.top): Source for ${site.hostname}, its routing Worker, and discovery files.`,
     '',

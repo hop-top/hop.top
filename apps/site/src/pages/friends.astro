@@ -1,0 +1,188 @@
+---
+import Base from '../layouts/Base.astro';
+import { friendGroups } from '../data/friends';
+---
+
+<Base
+  title="Friends — hop.top"
+  description="Open source projects we use, build on, or work well with."
+>
+  <main class="friends-page">
+    <div class="friends-glow"></div>
+    <div class="friends-content">
+      <a href="/" class="friends-back">&larr; all packages</a>
+
+      <h1 class="friends-title">Friends of hop.top</h1>
+      <p class="friends-intro">
+        Open source projects we use, build on, or work well with.
+      </p>
+
+      {
+        friendGroups.map((group) => (
+          <section class="friends-group">
+            <h2 class="friends-group-title">{group.label}</h2>
+            <ul class="friends-list">
+              {group.friends.map((friend) => (
+                <li class="friend">
+                  <h3 class="friend-name">
+                    <a href={friend.url}>{friend.name}</a>
+                  </h3>
+                  <p class="friend-what">{friend.what}</p>
+                  <p class="friend-relation">{friend.relation}</p>
+                  <p class="friend-tools">
+                    {friend.tools.map((tool) => (
+                      <a href={`/${tool}`} class="friend-tool">
+                        hop.top/{tool}
+                      </a>
+                    ))}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))
+      }
+
+      <p class="friends-note">
+        Each entry says how one of our tools relates to the project. A listing
+        is not a partnership or an endorsement.
+      </p>
+    </div>
+  </main>
+</Base>
+
+<style>
+  .friends-page {
+    position: relative;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 4rem 2rem;
+    overflow: hidden;
+  }
+
+  .friends-glow {
+    position: absolute;
+    top: -200px;
+    right: -100px;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--accent-cyan) 10%, transparent),
+      transparent 70%
+    );
+    pointer-events: none;
+  }
+
+  .friends-content {
+    position: relative;
+    z-index: 1;
+  }
+
+  .friends-back {
+    display: inline-block;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    margin-bottom: 2rem;
+    transition: color 0.15s;
+  }
+
+  .friends-back:hover {
+    color: var(--text-secondary);
+  }
+
+  .friends-title {
+    font-family: var(--font-mono);
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    margin-bottom: 0.75rem;
+  }
+
+  .friends-intro {
+    font-size: 1.125rem;
+    color: var(--text-secondary);
+    margin-bottom: 3rem;
+  }
+
+  .friends-group {
+    margin-bottom: 3rem;
+  }
+
+  .friends-group-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+  }
+
+  .friends-list {
+    list-style: none;
+    display: grid;
+    gap: 1rem;
+  }
+
+  .friend {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+  }
+
+  .friend-name {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+
+  .friend-name a {
+    color: var(--text-primary);
+    text-decoration: underline;
+    text-decoration-color: var(--border-hover);
+    text-underline-offset: 0.2em;
+    transition: text-decoration-color 0.15s;
+  }
+
+  .friend-name a:hover {
+    text-decoration-color: var(--accent-amber);
+  }
+
+  .friend-what {
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+  }
+
+  .friend-relation {
+    color: var(--text-primary);
+    font-size: 0.9375rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .friend-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .friend-tool {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--accent-amber);
+    background: color-mix(in srgb, var(--accent-amber) 10%, transparent);
+    padding: 0.15em 0.5em;
+    border-radius: 4px;
+  }
+
+  .friend-tool:hover {
+    background: color-mix(in srgb, var(--accent-amber) 18%, transparent);
+  }
+
+  .friends-note {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    border-top: 1px solid var(--border);
+    padding-top: 1.5rem;
+  }
+</style>

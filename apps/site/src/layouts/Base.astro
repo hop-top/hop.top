@@ -34,6 +34,9 @@ const { title, description = 'One import path. Many tools.' } = Astro.props;
       <p class="footer-text">
         hop.top &mdash; developer tools that compound.
       </p>
+      <p class="footer-links">
+        <a href="/friends" class="footer-link">Friends</a>
+      </p>
     </footer>
   </body>
 </html>
@@ -93,6 +96,20 @@ const { title, description = 'One import path. Many tools.' } = Astro.props;
   .footer-text {
     color: var(--text-muted);
     font-size: 0.8125rem;
+  }
+
+  .footer-links {
+    margin-top: 0.5rem;
+    font-size: 0.8125rem;
+  }
+
+  .footer-link {
+    color: var(--text-secondary);
+    transition: color 0.15s;
+  }
+
+  .footer-link:hover {
+    color: var(--text-primary);
   }
 </style>
 
