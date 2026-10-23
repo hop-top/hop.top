@@ -12,7 +12,10 @@
     "test:e2e": "vitest run --config tests/e2e/vitest.config.ts",
     "check": "npm run lint && npm run test"
   },
-  "author": "Jad Bitar <jadb@users.noreply.github.com>",
+  "author": "Idea Crafters LLC <open@ideacrafters.com>",
+  "contributors": [
+    "Jad Bitar (https://github.com/jadb)"
+  ],
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/node": "^22.0.0",

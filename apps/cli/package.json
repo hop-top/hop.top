@@ -10,7 +10,10 @@
   "scripts": {
     "build": "tsc"
   },
-  "author": "Jad Bitar <jadb@users.noreply.github.com>",
+  "author": "Idea Crafters LLC <open@ideacrafters.com>",
+  "contributors": [
+    "Jad Bitar (https://github.com/jadb)"
+  ],
   "license": "Apache-2.0",
   "dependencies": {
     "commander": "^12.0.0"
