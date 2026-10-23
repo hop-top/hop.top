@@ -12,6 +12,7 @@ const RESERVED_PATHS = [
   '404',
   'favicon.ico',
   'favicon.svg',
+  'friends',
   'llms.txt',
   'robots.txt',
   'sitemap-index.xml',
