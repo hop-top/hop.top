@@ -139,21 +139,27 @@ app.use('/:name/:version/:file{.+}', async (c, next) => {
   return new Response(body, { status: 200, headers })
 })
 
-// Single-segment paths serve Go metadata only when requested by Go tooling.
+// Package paths serve Go metadata only when requested by Go tooling.
 // Browser requests continue to the Pages-backed landing site.
-app.all('/:pkg', async (c, next) => {
+//
+// Subpaths (hop.top/<pkg>/<sub...>) answer with the root module's metadata,
+// per standard vanity-import behaviour: Go then locates nested packages and
+// modules (e.g. hop.top/nerv/sdk/go via sdk/go/vX.Y.Z tags) inside that repo.
+app.all('/:pkg/*', async (c, next) => {
   const pkg = c.req.param('pkg')
   const goGet = c.req.query('go-get') === '1'
+  const isRoot = c.req.path === `/${pkg}`
 
   // Reserve x[number] as a free namespace for future x402-style protocols.
-  if (/^x\d+$/.test(pkg) && pkg !== 'x402') return c.notFound()
+  const reserved = /^x\d+$/.test(pkg) && pkg !== 'x402'
 
   // Browser requests, including spec repository landing pages, belong to the
-  // marketing site. Namespace exclusions apply only to Go tooling.
-  if (!goGet) return next()
+  // marketing site. Namespace exclusions apply only to Go tooling, except
+  // that a bare reserved name is never served.
+  if (!goGet) return reserved && isRoot ? c.notFound() : next()
 
   // Specs are not Go packages — exclude from vanity-import resolution.
-  if (isSpecName(pkg)) return c.notFound()
+  if (reserved || isSpecName(pkg)) return c.notFound()
 
   // Go modules always live on the hop-top/<pkg> mirror. The Homebrew
   // homepage may point elsewhere (e.g. a polyglot monolith whose tags the

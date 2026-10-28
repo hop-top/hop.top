@@ -41,9 +41,11 @@ Routes are evaluated in this order:
    Pages site.
 2. Requests shaped as `spec.hop.top/<name>/<version>/<file>` are served from
    `hop-top/spec-<name>/specs/<version>/<file>` on GitHub.
-3. A single-segment `hop.top/<package>?go-get=1` request returns Go vanity
-   metadata. Reserved `x<number>` names, except `x402`, and `spec` names return
-   404.
+3. A `hop.top/<package>?go-get=1` request returns Go vanity metadata. Subpath
+   requests (`hop.top/<package>/<path...>?go-get=1`) return the same root
+   `hop.top/<package>` metadata, so Go can locate nested packages and modules
+   (for example `sdk/go`, tagged `sdk/go/vX.Y.Z`) inside that repository.
+   Reserved `x<number>` names, except `x402`, and `spec` names return 404.
 4. All other requests, including `hop.top/<package>` landing pages, are
    proxied to the Pages site.
 

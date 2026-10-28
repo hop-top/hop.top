@@ -11,7 +11,7 @@ hop.top gives the [hop-top](https://github.com/hop-top) project family one publi
 | URL | Behavior |
 |---|---|
 | [`hop.top`](https://hop.top) | Ecosystem site and project landing pages |
-| `hop.top/<package>?go-get=1` | Go vanity-import metadata |
+| `hop.top/<package>[/<path>]?go-get=1` | Go vanity-import metadata for the root module |
 | [`docs.hop.top`](https://docs.hop.top) | Unified project documentation gateway |
 | `docs.hop.top/<package>` | Published project docs, proxied from `<package>.hop.top` |
 | `spec.hop.top/<name>/<version>/<file>` | Canonical, versioned specification files |

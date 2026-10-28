@@ -1,5 +1,54 @@
-import { describe, it, expect } from "vitest";
-import { goVanity } from "../apps/router/src/index.js";
+import { describe, it, expect, vi, afterEach } from "vitest";
+import app, { goVanity } from "../apps/router/src/index.js";
+
+const ENV = { SITE_URL: "https://site.example" };
+const goGet = (path: string) =>
+  app.request(`https://hop.top${path}?go-get=1`, {}, ENV);
+
+describe("vanity subpaths", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("serves the root module go-import for a subpath", async () => {
+    const res = await goGet("/nerv/sdk/go");
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).toContain(
+      '<meta name="go-import" content="hop.top/nerv git https://github.com/hop-top/nerv">',
+    );
+    expect(html).toContain(
+      '<meta name="go-source" content="hop.top/nerv https://github.com/hop-top/nerv ',
+    );
+  });
+
+  it("serves the root module go-import for a deep subpath", async () => {
+    const res = await goGet("/kit/go/console/cli/internal");
+    expect(res.status).toBe(200);
+    expect(await res.text()).toContain(
+      'content="hop.top/kit git https://github.com/hop-top/kit"',
+    );
+  });
+
+  it("treats an unknown package's subpath like the unknown package", async () => {
+    for (const pkg of ["x999", "spec-crtx", "brand-new"]) {
+      const root = await goGet(`/${pkg}`);
+      const sub = await goGet(`/${pkg}/a/b`);
+      expect(sub.status).toBe(root.status);
+      expect(await sub.text()).toBe(await root.text());
+    }
+  });
+
+  it("leaves non-go-get subpaths to the site proxy", async () => {
+    const fetchSpy = vi.fn(async () => new Response("site page"));
+    vi.stubGlobal("fetch", fetchSpy);
+    const res = await app.request("https://hop.top/nerv/sdk/go", {}, ENV);
+    expect(await res.text()).toBe("site page");
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    const proxied = fetchSpy.mock.calls[0][0] as Request;
+    expect(proxied.url).toBe("https://site.example/nerv/sdk/go");
+  });
+});
 
 describe("goVanity", () => {
   it("generates correct go-import meta tag", () => {

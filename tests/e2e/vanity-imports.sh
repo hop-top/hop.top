@@ -65,6 +65,61 @@ check_vanity() {
   fi
 }
 
+# Subpath requests (nested packages/modules) must carry the root module's
+# go-import, e.g. hop.top/nerv/sdk/go -> hop.top/nerv git .../hop-top/nerv.
+check_subpath() {
+  local pkg="$1" sub="$2"
+  local expected_import="hop.top/${pkg} git https://github.com/hop-top/${pkg}"
+  echo "Testing subpath hop.top/${pkg}/${sub}..."
+
+  local response
+  response=$(curl -sS --connect-timeout 10 --max-time 30 -w "\n%{http_code}" \
+    "${BASE_URL}/${pkg}/${sub}?go-get=1" 2>&1) || {
+    fail "subpath ${pkg}/${sub}: curl failed"
+    return
+  }
+
+  local http_code body
+  http_code=$(echo "$response" | tail -1)
+  body=$(echo "$response" | sed '$d')
+
+  if [ "$http_code" != "200" ]; then
+    fail "subpath ${pkg}/${sub}: expected HTTP 200, got ${http_code}"
+    return
+  fi
+  pass "subpath ${pkg}/${sub}: HTTP 200"
+
+  if echo "$body" | grep -q "content=\"${expected_import}\""; then
+    pass "subpath ${pkg}/${sub}: root go-import meta tag"
+  else
+    fail "subpath ${pkg}/${sub}: root go-import meta tag missing or wrong"
+  fi
+
+  if echo "$body" | grep -q "name=\"go-source\".*content=\"hop.top/${pkg} "; then
+    pass "subpath ${pkg}/${sub}: root go-source meta tag"
+  else
+    fail "subpath ${pkg}/${sub}: root go-source meta tag missing or wrong"
+  fi
+}
+
+# Without go-get=1 a subpath is a site page, never Go metadata.
+check_subpath_browser() {
+  local path="$1"
+  echo "Testing browser subpath: ${path}..."
+
+  local body
+  body=$(curl -sS --connect-timeout 10 --max-time 30 "${BASE_URL}/${path}" 2>&1) || {
+    fail "browser ${path}: curl failed"
+    return
+  }
+
+  if echo "$body" | grep -q 'name="go-import"'; then
+    fail "browser ${path}: unexpected go-import meta tag"
+  else
+    pass "browser ${path}: no go-import meta tag"
+  fi
+}
+
 check_negative() {
   local pkg="$1"
   echo "Testing negative: ${pkg}..."
@@ -92,11 +147,20 @@ for pkg in "${PACKAGES[@]}"; do
   check_vanity "$pkg"
 done
 
+# Nested module and package paths resolve to the root module's repo.
+echo
+echo "--- Subpaths ---"
+check_subpath nerv sdk/go
+check_subpath nerv cmd/nerv
+check_subpath kit go/console/cli/internal
+check_subpath_browser nerv/sdk/go
+
 # Negative cases (only x[number] is reserved; arbitrary names now resolve
 # via convention fallback and return 200, so no point asserting 404 on them).
 echo
 echo "--- Negative cases ---"
 check_negative "x999"
+check_negative "x999/sub/pkg"
 
 echo
 echo "=== Results: ${PASS} passed, ${FAIL} failed ==="

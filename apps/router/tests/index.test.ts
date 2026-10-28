@@ -144,18 +144,70 @@ describe('go vanity routes', () => {
     expect(await res.text()).toBe('package landing page')
   })
 
-  it('does not return vanity for multi-segment paths', async () => {
-    // Hono's /:pkg matches a single path segment; /anything/sub falls through
-    // to app.all('*') which proxies to SITE_URL. We don't assert on what the
-    // site returns (mock or real) — only that no go-import meta is produced.
+  it('returns the root module go-import for a subpath', async () => {
+    const res = await request('/nerv/sdk/go?go-get=1')
+    expect(res.status).toBe(200)
+    const html = await res.text()
+    expect(html).toContain(
+      '<meta name="go-import" content="hop.top/nerv git https://github.com/hop-top/nerv">',
+    )
+    expect(html).toContain(
+      '<meta name="go-source" content="hop.top/nerv https://github.com/hop-top/nerv ',
+    )
+    expect(html).not.toContain('hop.top/nerv/sdk')
+  })
+
+  it('returns the root module go-import for a deep subpath', async () => {
+    const res = await request('/nerv/cmd/nerv/internal/deep/pkg?go-get=1')
+    expect(res.status).toBe(200)
+    const html = await res.text()
+    expect(html).toContain(
+      '<meta name="go-import" content="hop.top/nerv git https://github.com/hop-top/nerv">',
+    )
+    expect(html).not.toContain('hop.top/nerv/cmd')
+  })
+
+  it('answers a subpath exactly like its root package', async () => {
+    const root = await (await request('/some-new-repo?go-get=1')).text()
+    const sub = await (await request('/some-new-repo/sub/pkg?go-get=1')).text()
+    expect(sub).toBe(root)
+  })
+
+  it('returns 404 for a reserved x-number subpath', async () => {
+    const res = await request('/x999/sub/pkg?go-get=1')
+    expect(res.status).toBe(404)
+  })
+
+  it('returns 404 for a spec-* subpath', async () => {
+    const res = await request('/spec-crtx/go?go-get=1')
+    expect(res.status).toBe(404)
+  })
+
+  it('proxies non-go-get subpaths to the marketing site', async () => {
     const siteHost = new URL(env.SITE_URL).origin
-    fetchMock.get(siteHost).intercept({ path: '/anything/sub', query: { 'go-get': '1' } }).reply(
+    fetchMock.get(siteHost).intercept({ path: '/nerv/sdk/go' }).reply(
       200,
       'site response',
     )
-    const res = await request('/anything/sub?go-get=1')
-    const html = await res.text()
-    expect(html).not.toContain('go-import')
+    const res = await request('/nerv/sdk/go')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('site response')
+  })
+
+  it('returns 404 for a bare reserved x-number browser request', async () => {
+    const res = await request('/x999')
+    expect(res.status).toBe(404)
+  })
+
+  it('proxies non-go-get reserved subpaths to the marketing site', async () => {
+    const siteHost = new URL(env.SITE_URL).origin
+    fetchMock.get(siteHost).intercept({ path: '/x999/sub' }).reply(
+      200,
+      'site response',
+    )
+    const res = await request('/x999/sub')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('site response')
   })
 
   it('returns 404 for spec-* names (excluded from vanity)', async () => {
